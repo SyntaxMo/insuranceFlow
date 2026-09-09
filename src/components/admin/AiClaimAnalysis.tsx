@@ -1,9 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Button, Card } from "@/components/ui/Forms";
 import { formatCurrency } from "@/lib/format";
 import type { ClaimAnalysisResult } from "@/types/ai-analysis";
+
+const ANALYSIS_STAGES = [
+  "Extracting claim details",
+  "Reading police report",
+  "Inspecting repair estimate",
+  "Inspecting accident photos",
+  "Checking inconsistencies",
+  "Preparing analysis",
+] as const;
+
+function AnalysisProgress({ activeStage }: { activeStage: number }) {
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/80 to-white"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="h-1 overflow-hidden bg-teal-100">
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-[var(--brand-teal)]" />
+      </div>
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <span className="relative flex h-3 w-3" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-40" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--brand-teal)]" />
+          </span>
+          <p className="text-sm font-semibold text-[var(--brand-navy)]">
+            Analyzing claim documents
+          </p>
+        </div>
+        <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+          {ANALYSIS_STAGES.map((stage, index) => {
+            const complete = index < activeStage;
+            const active = index === activeStage;
+            return (
+              <li
+                key={stage}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  active
+                    ? "bg-white font-medium text-[var(--brand-navy)] shadow-sm ring-1 ring-teal-100"
+                    : complete
+                      ? "text-teal-700"
+                      : "text-slate-400"
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                    complete
+                      ? "bg-teal-100 text-teal-700"
+                      : active
+                        ? "border-2 border-teal-200 border-t-[var(--brand-teal)] animate-spin"
+                        : "border border-slate-200 bg-white"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {complete ? "✓" : null}
+                </span>
+                {stage}
+              </li>
+            );
+          })}
+        </ol>
+        <p className="mt-3 text-xs text-slate-500">
+          This can take a little while when several documents are attached.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function isClaimAnalysisResult(value: unknown): value is ClaimAnalysisResult {
   if (!value || typeof value !== "object") return false;
@@ -160,22 +229,37 @@ function AnalysisBody({ analysis }: { analysis: ClaimAnalysisResult }) {
 export function AiClaimAnalysis({
   claimId,
   initialAnalysis = null,
-  initialError = null,
-  setupSql = null,
 }: {
   claimId: string;
   initialAnalysis?: ClaimAnalysisResult | null;
-  initialError?: string | null;
-  setupSql?: string | null;
 }) {
   const [analysis, setAnalysis] = useState<ClaimAnalysisResult | null>(
     initialAnalysis,
   );
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
-  const [sql, setSql] = useState<string | null>(setupSql);
+  const [activeStage, setActiveStage] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [sql, setSql] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const interval = window.setInterval(() => {
+      setActiveStage((current) =>
+        Math.min(current + 1, ANALYSIS_STAGES.length - 1),
+      );
+    }, 1_600);
+
+    return () => window.clearInterval(interval);
+  }, [loading]);
+
+  async function finishProgress() {
+    setActiveStage(ANALYSIS_STAGES.length - 1);
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+  }
 
   async function handleAnalyze() {
+    setActiveStage(0);
     setLoading(true);
     setError(null);
     setSql(null);
@@ -185,6 +269,7 @@ export function AiClaimAnalysis({
         method: "POST",
       });
       const payload = (await response.json()) as unknown;
+      await finishProgress();
 
       if (!response.ok) {
         const record =
@@ -214,6 +299,7 @@ export function AiClaimAnalysis({
 
       setAnalysis(wrapped);
     } catch {
+      await finishProgress();
       setError("Unable to analyze this claim right now.");
     } finally {
       setLoading(false);
@@ -232,10 +318,14 @@ export function AiClaimAnalysis({
             or reject the claim.
           </p>
         </div>
-        <Button type="button" onClick={handleAnalyze} disabled={loading}>
-          {loading ? "Analyzing claim..." : "Analyze with AI"}
-        </Button>
+        {!loading ? (
+          <Button type="button" onClick={handleAnalyze}>
+            Analyze with AI
+          </Button>
+        ) : null}
       </div>
+
+      {loading ? <AnalysisProgress activeStage={activeStage} /> : null}
 
       {error ? (
         <Alert tone="error">
@@ -247,16 +337,6 @@ export function AiClaimAnalysis({
             </pre>
           ) : null}
         </Alert>
-      ) : null}
-
-      {loading ? (
-        <p className="text-sm text-slate-600">Analyzing claim...</p>
-      ) : null}
-
-      {!loading && !analysis && !error ? (
-        <p className="text-sm text-slate-600">
-          This claim has not been analyzed yet.
-        </p>
       ) : null}
 
       {analysis ? <AnalysisBody analysis={analysis} /> : null}

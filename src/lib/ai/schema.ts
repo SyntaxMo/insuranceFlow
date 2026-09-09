@@ -11,25 +11,14 @@ const emptyToNull = (value: string | null | undefined): string | null => {
 
 const stringOrNull = z
   .union([z.string(), z.null()])
-  .optional()
-  .transform((value) => emptyToNull(value ?? null));
+  .transform((value) => emptyToNull(value));
 
 const stringList = z
-  .array(z.unknown())
-  .optional()
-  .transform((values) =>
-    (values ?? []).flatMap((item) => {
-      if (typeof item === "string" || typeof item === "number") {
-        const text = String(item).trim();
-        return text ? [text] : [];
-      }
-      return [];
-    }),
-  );
+  .array(z.string())
+  .transform((values) => values.map((item) => item.trim()).filter(Boolean));
 
 const repairEstimateAmount = z
   .union([z.number(), z.string(), z.null()])
-  .optional()
   .transform((value) => {
     if (value == null || value === "") return null;
     if (typeof value === "number") {
@@ -41,8 +30,7 @@ const repairEstimateAmount = z
 
 export const claimAnalysisPayloadSchema = z.object({
   summary: z.string().min(1),
-  extractedInformation: z
-    .object({
+  extractedInformation: z.object({
       accidentDate: stringOrNull,
       accidentLocation: stringOrNull,
       vehicle: stringOrNull,
@@ -52,23 +40,11 @@ export const claimAnalysisPayloadSchema = z.object({
       visibleVehicleDamage: stringList,
       otherVehiclesMentioned: stringList,
       otherPartiesMentioned: stringList,
-    })
-    .optional()
-    .transform((value) => ({
-      accidentDate: value?.accidentDate ?? null,
-      accidentLocation: value?.accidentLocation ?? null,
-      vehicle: value?.vehicle ?? null,
-      repairEstimateAmount: value?.repairEstimateAmount ?? null,
-      policeReportNumber: value?.policeReportNumber ?? null,
-      policeReportDetails: value?.policeReportDetails ?? null,
-      visibleVehicleDamage: value?.visibleVehicleDamage ?? [],
-      otherVehiclesMentioned: value?.otherVehiclesMentioned ?? [],
-      otherPartiesMentioned: value?.otherPartiesMentioned ?? [],
-    })),
+    }).strict(),
   missingInformation: stringList,
   inconsistencies: stringList,
   riskFlags: stringList,
-});
+}).strict();
 
 export function extractJsonObject(text: string): unknown {
   const trimmed = text.trim();
@@ -95,7 +71,11 @@ export function extractJsonObject(text: string): unknown {
     }
   }
 
-  console.error("AI JSON parse failed:", lastError);
+  console.error("[claim-analysis] JSON parse failed:",
+    lastError instanceof Error
+      ? { name: lastError.name, message: lastError.message }
+      : { message: String(lastError) },
+  );
   throw new ClaimAnalysisError(
     "The AI response was not valid JSON. Please try again.",
     502,
@@ -108,7 +88,7 @@ export function parseClaimAnalysis(
 ): ClaimAnalysisResult {
   const parsed = claimAnalysisPayloadSchema.safeParse(payload);
   if (!parsed.success) {
-    console.error("AI schema validation failed:", parsed.error.issues);
+    console.error("[claim-analysis] schema validation failed:", parsed.error.issues);
     throw new ClaimAnalysisError(
       "The AI response could not be validated. Please try again.",
       502,

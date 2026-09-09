@@ -179,8 +179,6 @@ export default async function AdminClaimDetailPage({
           <AiClaimAnalysis
             claimId={claim.id}
             initialAnalysis={savedAnalysis.analysis}
-            initialError={savedAnalysis.error}
-            setupSql={savedAnalysis.supabaseSql ?? null}
           />
         </div>
       )}

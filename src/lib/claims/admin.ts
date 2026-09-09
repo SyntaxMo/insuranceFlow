@@ -12,6 +12,7 @@ import type {
   ClaimListItem,
   Policy,
 } from "@/types/database";
+import { safeErrorDetails } from "@/lib/ai/debug";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
@@ -133,7 +134,7 @@ export async function getClaimById(
       .maybeSingle();
 
     if (error) {
-      console.error("getClaimById failed:", error.message);
+      console.error("[claim-analysis] claim read failed:", safeErrorDetails(error));
       return {
         claim: null,
         error: "Unable to load this claim right now. Please try again shortly.",
@@ -164,7 +165,7 @@ export async function getClaimById(
       .order("created_at", { ascending: true });
 
     if (docsError) {
-      console.error("claim documents fetch failed:", docsError.message);
+      console.error("[claim-analysis] document records read failed:", safeErrorDetails(docsError));
       return {
         claim: null,
         error: "Unable to load claim documents right now.",
@@ -178,7 +179,10 @@ export async function getClaimById(
           .createSignedUrl(doc.file_path, SIGNED_URL_TTL_SECONDS);
 
         if (signedError) {
-          console.error("Signed URL failed:", signedError.message);
+          console.error("[claim-analysis] document signed URL failed:", {
+            documentId: doc.id,
+            error: safeErrorDetails(signedError),
+          });
         }
 
         return {
@@ -210,7 +214,7 @@ export async function getClaimById(
       error: null,
     };
   } catch (err) {
-    console.error("getClaimById exception:", err);
+    console.error("[claim-analysis] claim loading exception:", safeErrorDetails(err));
     return {
       claim: null,
       error: "Unable to load this claim due to a server error.",

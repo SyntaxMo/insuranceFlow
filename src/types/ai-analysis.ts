@@ -20,4 +20,5 @@ export interface ClaimAnalysisResult {
   updatedAt: string | null;
 }
 
-export const CLAIM_AI_MODEL = "google/gemma-4-31b-it:free";
+export const CLAIM_AI_MODEL =
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";

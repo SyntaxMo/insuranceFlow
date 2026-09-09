@@ -28,13 +28,23 @@ describe("extractJsonObject", () => {
 });
 
 describe("parseClaimAnalysis", () => {
-  it("validates and fills omitted fields without inventing facts", () => {
+  it("validates a complete analysis without inventing facts", () => {
     const result = parseClaimAnalysis({
       summary: "A rear-end collision was reported.",
       extractedInformation: {
         accidentDate: "2026-03-01",
+        accidentLocation: null,
         vehicle: "Toyota Corolla (2022)",
+        repairEstimateAmount: null,
+        policeReportNumber: null,
+        policeReportDetails: null,
+        visibleVehicleDamage: [],
+        otherVehiclesMentioned: [],
+        otherPartiesMentioned: [],
       },
+      missingInformation: [],
+      inconsistencies: [],
+      riskFlags: [],
     });
 
     expect(result.extractedInformation.accidentDate).toBe("2026-03-01");
@@ -45,6 +55,18 @@ describe("parseClaimAnalysis", () => {
     expect(result.missingInformation).toEqual([]);
     expect(result.inconsistencies).toEqual([]);
     expect(result.riskFlags).toEqual([]);
+  });
+
+  it("rejects omitted fields instead of silently filling them", () => {
+    expect(() =>
+      parseClaimAnalysis({
+        summary: "A rear-end collision was reported.",
+        extractedInformation: {
+          accidentDate: "2026-03-01",
+          vehicle: "Toyota Corolla (2022)",
+        },
+      }),
+    ).toThrow(ClaimAnalysisError);
   });
 
   it("rejects missing summaries", () => {

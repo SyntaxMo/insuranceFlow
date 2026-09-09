@@ -22,6 +22,9 @@ Hard rules:
 - Do not treat missing information as automatically suspicious.
 - Keep the analysis professional and concise.
 - Return valid JSON only. No markdown, no commentary, no code fences.
+- Your entire response must be one JSON object: the first non-whitespace character must be { and the last must be }.
+- Include every key in the structure below. Use null for an unknown scalar value and [] for an empty list; never omit a key.
+- Use double-quoted JSON property names and strings, and do not include trailing commas.
 
 Return a single JSON object with this exact structure:
 {

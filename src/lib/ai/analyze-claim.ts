@@ -4,8 +4,10 @@ import { OpenRouter } from "@openrouter/sdk";
 import {
   BadGatewayResponseError,
   ConnectionError,
+  ForbiddenResponseError,
   NotFoundResponseError,
   OpenRouterError,
+  PaymentRequiredResponseError,
   ProviderOverloadedResponseError,
   RequestTimeoutError,
   ServiceUnavailableResponseError,
@@ -18,6 +20,11 @@ import { ClaimAnalysisError } from "@/lib/ai/errors";
 import { CLAIM_ANALYSIS_SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import { extractJsonObject, parseClaimAnalysis } from "@/lib/ai/schema";
 import { getSavedClaimAnalysis, saveClaimAnalysis } from "@/lib/ai/store";
+import {
+  hasRecognizableSecret,
+  redactSecrets,
+  safeErrorDetails,
+} from "@/lib/ai/debug";
 import { documentTypeLabel } from "@/lib/validation/claim";
 import type { ClaimAnalysisResult } from "@/types/ai-analysis";
 import { CLAIM_AI_MODEL } from "@/types/ai-analysis";
@@ -28,8 +35,11 @@ type UserContentPart =
   | { type: "image_url"; imageUrl: { url: string } }
   | { type: "file"; file: { filename: string; fileData: string } };
 
+export type ClaimAnalysisInputMode = "text" | "images" | "pdfs" | "all";
+
 function requireOpenRouterKey(): string {
   const key = process.env.OPENROUTER_API_KEY?.trim();
+  console.info("[claim-analysis] OPENROUTER_API_KEY configured:", Boolean(key));
   if (!key) {
     throw new ClaimAnalysisError(
       "AI analysis is not configured. The OpenRouter API key is missing.",
@@ -42,10 +52,26 @@ function requireOpenRouterKey(): string {
 function mapOpenRouterError(err: unknown): ClaimAnalysisError {
   if (err instanceof ClaimAnalysisError) return err;
 
+  if (err instanceof OpenRouterError) {
+    console.error("[claim-analysis] OpenRouter request failed:", safeErrorDetails(err));
+  }
+
   if (err instanceof UnauthorizedResponseError) {
     return new ClaimAnalysisError(
       "AI analysis is not authorized. Check the OpenRouter API key.",
       502,
+    );
+  }
+  if (err instanceof PaymentRequiredResponseError) {
+    return new ClaimAnalysisError(
+      "The AI service could not process the submitted files right now.",
+      502,
+    );
+  }
+  if (err instanceof ForbiddenResponseError) {
+    return new ClaimAnalysisError(
+      "The selected AI model is not available to this application.",
+      503,
     );
   }
   if (err instanceof TooManyRequestsResponseError) {
@@ -72,14 +98,13 @@ function mapOpenRouterError(err: unknown): ClaimAnalysisError {
     );
   }
   if (err instanceof OpenRouterError) {
-    console.error("OpenRouter request failed:", err.statusCode);
     return new ClaimAnalysisError(
       "The AI analysis request failed. Please try again.",
       502,
     );
   }
 
-  console.error("Unexpected AI analysis error:", err);
+  console.error("[claim-analysis] unexpected OpenRouter error:", safeErrorDetails(err));
   return new ClaimAnalysisError(
     "Unable to analyze this claim right now. Please try again.",
     500,
@@ -115,9 +140,8 @@ function assistantText(response: {
 
 function buildUserText(
   claim: ClaimDetailView,
-  documents: Awaited<ReturnType<typeof prepareClaimDocuments>>,
+  documents: Awaited<ReturnType<typeof prepareClaimDocuments>> = [],
 ): string {
-  const vehicle = `${claim.policy.vehicle.make} ${claim.policy.vehicle.model} (${claim.policy.vehicle.year})`;
   const documentInventory = documents.map((doc) => ({
     type: documentTypeLabel(doc.documentType),
     fileName: doc.fileName,
@@ -137,17 +161,13 @@ function buildUserText(
         accidentLocation: claim.accidentLocation,
         accidentDescription: claim.description,
         policyNumber: claim.policy.policyNumber,
-        policyStatus: claim.policyStatus,
         coverageType: claim.policy.coverageType,
         excessAmount: claim.policy.excessAmount,
         coverageLimit: claim.policy.coverageLimit,
-        policyStartDate: claim.policy.startDate,
-        policyEndDate: claim.policy.endDate,
         vehicleMake: claim.policy.vehicle.make,
         vehicleModel: claim.policy.vehicle.model,
         vehicleYear: claim.policy.vehicle.year,
         plateNumber: claim.policy.vehicle.plateNumber,
-        vehicleLabel: vehicle,
       },
       null,
       2,
@@ -163,23 +183,43 @@ function buildUserText(
 
 export async function analyzeClaimWithOpenRouter(
   claimId: string,
+  inputMode: ClaimAnalysisInputMode = "all",
 ): Promise<ClaimAnalysisResult> {
   const apiKey = requireOpenRouterKey();
+  console.info("[claim-analysis] starting:", { claimId, inputMode, model: CLAIM_AI_MODEL });
   const { claim, error } = await getClaimById(claimId);
 
   if (!claim) {
+    console.error("[claim-analysis] claim loading failed:", {
+      claimId,
+      message: error || "Claim not found.",
+    });
     throw new ClaimAnalysisError(
       error || "Claim not found.",
       error === "Claim not found." ? 404 : 400,
     );
   }
 
-  const documents = await prepareClaimDocuments(claim);
+  console.info("[claim-analysis] claim loaded:", { claimId: claim.id });
+  const documents =
+    inputMode === "text" ? [] : await prepareClaimDocuments(claim);
+  console.info("[claim-analysis] documents prepared:", {
+    total: documents.length,
+    images: documents.filter((document) => document.kind === "image").length,
+    pdfs: documents.filter((document) => document.kind === "pdf").length,
+    inaccessible: documents.filter((document) => document.kind === "inaccessible").length,
+    unsupported: documents.filter((document) => document.kind === "unsupported").length,
+  });
+  const includedDocuments = documents.filter((document) => {
+    if (inputMode === "images") return document.kind === "image";
+    if (inputMode === "pdfs") return document.kind === "pdf";
+    return true;
+  });
   const userContent: UserContentPart[] = [
-    { type: "text", text: buildUserText(claim, documents) },
+    { type: "text", text: buildUserText(claim, includedDocuments) },
   ];
 
-  for (const doc of documents) {
+  for (const doc of includedDocuments) {
     if (!doc.dataUrl || !doc.mimeType) continue;
     userContent.push({
       type: "text",
@@ -215,12 +255,16 @@ export async function analyzeClaimWithOpenRouter(
         model: CLAIM_AI_MODEL,
         stream: false,
         maxTokens: 4096,
-        plugins: [
-          {
-            id: "file-parser",
-            pdf: { engine: "native" },
-          },
-        ],
+        ...(userContent.some((part) => part.type === "file")
+          ? {
+              plugins: [
+                {
+                  id: "file-parser" as const,
+                  pdf: { engine: "cloudflare-ai" as const },
+                },
+              ],
+            }
+          : {}),
         messages: [
           {
             role: "system",
@@ -232,19 +276,42 @@ export async function analyzeClaimWithOpenRouter(
           },
         ],
       },
+    }, {
+      retries: {
+        strategy: "backoff",
+        backoff: {
+          initialInterval: 1_000,
+          maxInterval: 5_000,
+          exponent: 1.5,
+          maxElapsedTime: 20_000,
+        },
+        retryConnectionErrors: true,
+      },
+      retryCodes: ["429", "5XX"],
     });
   } catch (err) {
     throw mapOpenRouterError(err);
   }
 
   const content = assistantText(response as { choices?: Array<{ message?: { content?: string | Array<{ text?: string }> | null; refusal?: string | null } }> });
+  console.info("[claim-analysis] model returned content:", Boolean(content));
+  if (content) {
+    if (hasRecognizableSecret(content)) {
+      console.info("[claim-analysis] raw model content omitted because it may contain a secret.");
+    } else {
+      console.info("[claim-analysis] raw model content:", redactSecrets(content));
+    }
+  }
   const json = extractJsonObject(content);
   const analysis = parseClaimAnalysis(json, {
     model: CLAIM_AI_MODEL,
     updatedAt: new Date().toISOString(),
   });
 
-  return saveClaimAnalysis(claim.id, analysis);
+  console.info("[claim-analysis] JSON parsed and schema validated.");
+  const saved = await saveClaimAnalysis(claim.id, analysis);
+  console.info("[claim-analysis] analysis saved:", { claimId: claim.id });
+  return saved;
 }
 
 export async function loadClaimAnalysis(

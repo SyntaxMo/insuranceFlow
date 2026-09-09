@@ -5,6 +5,7 @@ import { ClaimAnalysisError, CLAIM_AI_ANALYSES_GRANT_SQL } from "@/lib/ai/errors
 import { parseClaimAnalysis } from "@/lib/ai/schema";
 import type { ClaimAnalysisResult } from "@/types/ai-analysis";
 import { CLAIM_AI_MODEL } from "@/types/ai-analysis";
+import { redactSecrets, safeErrorDetails } from "@/lib/ai/debug";
 
 interface ClaimAiAnalysisRow {
   id: string;
@@ -31,7 +32,7 @@ function isPermissionError(message: string): boolean {
 }
 
 function throwStoreError(action: "read" | "write", message: string): never {
-  console.error(`claim_ai_analyses ${action} failed:`, message);
+  console.error(`[claim-analysis] claim_ai_analyses ${action} failed:`, redactSecrets(message));
   if (isPermissionError(message)) {
     throw new ClaimAnalysisError(
       "The AI analysis table exists, but this app cannot read or write it yet. Additional Supabase grants are required.",
@@ -67,6 +68,18 @@ export async function getSavedClaimAnalysis(
     if (!data) return null;
 
     const row = data as ClaimAiAnalysisRow;
+    const normalizedModel = row.model?.trim().toLowerCase() || "";
+    if (
+      !normalizedModel ||
+      normalizedModel === "mock" ||
+      normalizedModel === "placeholder" ||
+      normalizedModel === "demo"
+    ) {
+      console.warn("[claim-analysis] ignored non-model saved analysis:", {
+        claimId,
+      });
+      return null;
+    }
     return parseClaimAnalysis(
       {
         summary: row.summary || "",
@@ -82,7 +95,7 @@ export async function getSavedClaimAnalysis(
     );
   } catch (err) {
     if (err instanceof ClaimAnalysisError) throw err;
-    console.error("getSavedClaimAnalysis exception:", err);
+    console.error("[claim-analysis] saved analysis read exception:", safeErrorDetails(err));
     throw new ClaimAnalysisError("Unable to load the saved AI analysis right now.");
   }
 }
@@ -126,7 +139,7 @@ export async function saveClaimAnalysis(
     };
   } catch (err) {
     if (err instanceof ClaimAnalysisError) throw err;
-    console.error("saveClaimAnalysis exception:", err);
+    console.error("[claim-analysis] analysis write exception:", safeErrorDetails(err));
     throw new ClaimAnalysisError("Unable to save the AI analysis right now.");
   }
 }

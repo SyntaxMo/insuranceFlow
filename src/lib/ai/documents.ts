@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase/server";
 import { documentTypeLabel } from "@/lib/validation/claim";
 import type { ClaimDetailView } from "@/types/database";
+import { safeErrorDetails } from "@/lib/ai/debug";
 
 export type PreparedDocumentKind = "image" | "pdf" | "unsupported" | "inaccessible";
 
@@ -56,7 +57,11 @@ export async function prepareClaimDocuments(
       .download(doc.storagePath);
 
     if (error || !data) {
-      console.error("Claim document download failed:", doc.id, error?.message);
+      console.error("[claim-analysis] document download failed:", {
+        documentId: doc.id,
+        fileName: doc.fileName,
+        error: error ? safeErrorDetails(error) : { message: "No data returned" },
+      });
       prepared.push({
         id: doc.id,
         documentType: doc.documentType,
