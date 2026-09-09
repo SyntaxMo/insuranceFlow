@@ -203,6 +203,7 @@ export async function getClaimById(
         description: claim.description,
         email: claim.contact_email || "",
         phone: claim.contact_phone || "",
+        policyStatus: String(policy.status),
         policy: summary,
         documents,
       },

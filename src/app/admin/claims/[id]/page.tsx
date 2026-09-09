@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { loadClaimAnalysis } from "@/lib/ai/analyze-claim";
 import { getClaimById } from "@/lib/claims/admin";
 import { formatCurrency, formatDate, formatDateTime, statusTone } from "@/lib/format";
 import { documentTypeLabel } from "@/lib/validation/claim";
+import { AiClaimAnalysis } from "@/components/admin/AiClaimAnalysis";
 import { Alert, Card } from "@/components/ui/Forms";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +16,9 @@ export default async function AdminClaimDetailPage({
 }) {
   const { id } = await params;
   const { claim, error } = await getClaimById(id);
+  const savedAnalysis = claim
+    ? await loadClaimAnalysis(claim.id)
+    : { analysis: null, error: null, supabaseSql: undefined };
 
   if (!claim && !error) {
     notFound();
@@ -170,6 +175,13 @@ export default async function AdminClaimDetailPage({
               </ul>
             )}
           </Card>
+
+          <AiClaimAnalysis
+            claimId={claim.id}
+            initialAnalysis={savedAnalysis.analysis}
+            initialError={savedAnalysis.error}
+            setupSql={savedAnalysis.supabaseSql ?? null}
+          />
         </div>
       )}
     </div>

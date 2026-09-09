@@ -106,6 +106,7 @@ export interface ClaimDetailView {
   description: string;
   email: string;
   phone: string;
+  policyStatus: string;
   policy: VerifiedPolicySummary;
   documents: Array<{
     id: string;
