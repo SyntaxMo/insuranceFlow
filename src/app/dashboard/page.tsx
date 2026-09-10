@@ -3,18 +3,25 @@ import { requireCustomer } from "@/lib/auth/session";
 import { getCustomerDashboard } from "@/lib/claims/customer";
 import { formatDate, statusTone } from "@/lib/format";
 import { Alert, Card } from "@/components/ui/Forms";
+import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null;
   return Array.isArray(value) ? value[0] || null : value;
 }
 
-export default async function CustomerDashboardPage() {
+export default async function CustomerDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ confirmed?: string }>;
+}) {
+  const params = await searchParams;
   const profile = await requireCustomer();
   const { policies, claims, error } = await getCustomerDashboard(profile.id);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      {params.confirmed === "1" ? <ConfirmationToast /> : null}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Customer dashboard</p>

@@ -20,20 +20,14 @@ export function routeForRole(role: UserRole): "/dashboard" | "/admin" {
   return role === "CUSTOMER" ? "/dashboard" : "/admin";
 }
 
-export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
-  const authClient = await createServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) return null;
-
+export async function getProfileByAuthUserId(
+  authUserId: string,
+): Promise<AuthProfile | null> {
   const serviceClient = createServiceRoleClient();
   const { data, error } = await serviceClient
     .from("users")
     .select(PROFILE_COLUMNS)
-    .eq("auth_user_id", user.id)
+    .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (error) {
@@ -48,6 +42,17 @@ export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
   }
 
   return data as AuthProfile;
+}
+
+export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
+  const authClient = await createServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await authClient.auth.getUser();
+
+  if (authError || !user) return null;
+  return getProfileByAuthUserId(user.id);
 }
 
 export async function requireCustomer(): Promise<AuthProfile> {

@@ -16,6 +16,12 @@ function fieldsFromError(error: { flatten(): { fieldErrors: Record<string, strin
   return error.flatten().fieldErrors;
 }
 
+function authCallbackUrl(): string {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
+  return new URL("/auth/callback", siteUrl).toString();
+}
+
 export async function loginAction(
   _previous: AuthFormState,
   formData: FormData,
@@ -78,7 +84,10 @@ export async function signupAction(
   const { data, error } = await authClient.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, phone } },
+    options: {
+      data: { full_name: fullName, phone },
+      emailRedirectTo: authCallbackUrl(),
+    },
   });
 
   if (error || !data.user) {
@@ -114,7 +123,7 @@ export async function signupAction(
   if (!data.session) {
     return {
       success: true,
-      message: "Account created. Check your email to confirm it, then sign in.",
+      message: "We've sent a confirmation link to your email.",
     };
   }
 

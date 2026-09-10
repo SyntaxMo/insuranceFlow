@@ -65,6 +65,17 @@ describe("signupAction", () => {
     );
 
     expect(signUpMock).toHaveBeenCalledTimes(1);
+    expect(signUpMock).toHaveBeenCalledWith({
+      email: "customer@example.org",
+      password: "password1",
+      options: {
+        data: {
+          full_name: "Test Customer",
+          phone: "+973 3000 0000",
+        },
+        emailRedirectTo: "http://localhost:3000/auth/callback",
+      },
+    });
     expect(insertProfileMock).toHaveBeenCalledWith({
       full_name: "Test Customer",
       email: "customer@example.org",
@@ -85,5 +96,24 @@ describe("signupAction", () => {
     expect(result.fields?.confirmPassword).toContain("Passwords do not match.");
     expect(signUpMock).not.toHaveBeenCalled();
     expect(insertProfileMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the concise confirmation message when email verification is required", async () => {
+    signUpMock.mockResolvedValue({
+      data: {
+        user: { id: "auth-user-id", identities: [{ id: "identity-id" }] },
+        session: null,
+      },
+      error: null,
+    });
+
+    const result = await signupAction({}, validFormData());
+
+    expect(result).toEqual({
+      success: true,
+      message: "We've sent a confirmation link to your email.",
+    });
+    expect(signUpMock).toHaveBeenCalledTimes(1);
+    expect(insertProfileMock).toHaveBeenCalledTimes(1);
   });
 });
