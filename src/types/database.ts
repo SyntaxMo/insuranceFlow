@@ -6,6 +6,8 @@ export type ClaimStatus =
   | "REJECTED"
   | "CLOSED";
 
+export type UserRole = "CUSTOMER" | "CLAIMS_OFFICER" | "ADMIN";
+
 export type DocumentType =
   | "POLICE_REPORT"
   | "REPAIR_ESTIMATE"
@@ -16,6 +18,8 @@ export interface User {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  role: UserRole;
+  auth_user_id: string | null;
   created_at?: string;
 }
 

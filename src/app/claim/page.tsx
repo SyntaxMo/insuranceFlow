@@ -1,6 +1,10 @@
 import { ClaimWizard } from "@/components/claim/ClaimWizard";
+import { requireCustomer } from "@/lib/auth/session";
 
-export default function ClaimPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ClaimPage() {
+  const profile = await requireCustomer();
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-8">
@@ -15,7 +19,10 @@ export default function ClaimPage() {
           attach documents, and submit for review.
         </p>
       </div>
-      <ClaimWizard />
+      <ClaimWizard
+        initialEmail={profile.email || ""}
+        initialPhone={profile.phone || ""}
+      />
     </div>
   );
 }

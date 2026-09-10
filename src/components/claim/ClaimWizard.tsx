@@ -119,10 +119,16 @@ function filePreviewUrl(file: File): string | null {
   return URL.createObjectURL(file);
 }
 
-export function ClaimWizard() {
+export function ClaimWizard({
+  initialEmail,
+  initialPhone,
+}: {
+  initialEmail: string;
+  initialPhone: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
-  const [policyNumber, setPolicyNumber] = useState("MOT-2026-0001");
+  const [policyNumber, setPolicyNumber] = useState("");
   const [policy, setPolicy] = useState<VerifiedPolicySummary | null>(null);
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -131,8 +137,8 @@ export function ClaimWizard() {
     accidentDate: "",
     accidentLocation: "",
     description: "",
-    email: "",
-    phone: "",
+    email: initialEmail,
+    phone: initialPhone,
   });
   const [accidentErrors, setAccidentErrors] = useState<
     ReturnType<typeof validateAccidentForm>
@@ -348,7 +354,7 @@ export function ClaimWizard() {
           <Field
             label="Policy number"
             htmlFor="policyNumber"
-            hint="Test policy: MOT-2026-0001"
+            hint="Enter a policy linked to your customer account."
           >
             <TextInput
               id="policyNumber"
@@ -456,30 +462,27 @@ export function ClaimWizard() {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" htmlFor="email" error={accidentErrors.email}>
+            <Field label="Email" htmlFor="email" hint="From your customer profile." error={accidentErrors.email}>
               <TextInput
                 id="email"
                 type="email"
                 value={accident.email}
-                onChange={(e) =>
-                  setAccident((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="you@example.com"
+                readOnly
+                className="bg-slate-50"
               />
             </Field>
             <Field
               label="Phone number"
               htmlFor="phone"
+              hint="From your customer profile."
               error={accidentErrors.phone}
             >
               <TextInput
                 id="phone"
                 type="tel"
                 value={accident.phone}
-                onChange={(e) =>
-                  setAccident((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="+1 555 0100"
+                readOnly
+                className="bg-slate-50"
               />
             </Field>
           </div>

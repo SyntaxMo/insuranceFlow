@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { signOutAction } from "@/app/(auth)/actions";
+import { getAuthenticatedProfile, isStaffRole } from "@/lib/auth/session";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const profile = await getAuthenticatedProfile();
   return (
     <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -12,19 +15,25 @@ export function SiteHeader() {
             InsureFlow
           </span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
-          <Link
-            href="/claim"
-            className="transition hover:text-[var(--brand-navy)]"
-          >
-            Start a Claim
-          </Link>
-          <Link
-            href="/admin/claims"
-            className="rounded-lg border border-slate-200 px-3 py-1.5 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            Admin
-          </Link>
+        <nav className="flex items-center gap-3 text-sm font-medium text-slate-600">
+          {profile?.role === "CUSTOMER" ? (
+            <>
+              <Link href="/dashboard" className="transition hover:text-[var(--brand-navy)]">Dashboard</Link>
+              <Link href="/claim" className="transition hover:text-[var(--brand-navy)]">New Claim</Link>
+            </>
+          ) : profile && isStaffRole(profile.role) ? (
+            <Link href="/admin/claims" className="transition hover:text-[var(--brand-navy)]">Claims</Link>
+          ) : (
+            <>
+              <Link href="/login" className="transition hover:text-[var(--brand-navy)]">Sign in</Link>
+              <Link href="/signup" className="rounded-lg border border-slate-200 px-3 py-1.5 transition hover:border-slate-300 hover:bg-slate-50">Register</Link>
+            </>
+          )}
+          {profile ? (
+            <form action={signOutAction}>
+              <button type="submit" className="rounded-lg border border-slate-200 px-3 py-1.5 transition hover:border-slate-300 hover:bg-slate-50">Sign Out</button>
+            </form>
+          ) : null}
         </nav>
       </div>
     </header>

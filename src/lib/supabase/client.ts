@@ -1,9 +1,8 @@
-/**
- * Browser-safe Supabase client using the anon key only.
- * Do not query sensitive tables (users, vehicles, policies, claims,
- * claim_documents) from the browser — use Next.js API routes instead.
- */
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  createBrowserClient as createSsrBrowserClient,
+  type CookieOptionsWithName,
+} from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
 
@@ -21,11 +20,11 @@ export function createBrowserClient(): SupabaseClient {
     );
   }
 
-  browserClient = createClient(url, anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+  browserClient = createSsrBrowserClient(url, anonKey, {
+    cookieOptions: {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    } satisfies CookieOptionsWithName,
   });
 
   return browserClient;

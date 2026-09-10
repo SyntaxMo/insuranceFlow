@@ -21,16 +21,16 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/claim"
+            href="/signup"
             className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-teal)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-teal-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]"
           >
-            Start a Claim
+            Create customer account
           </Link>
           <Link
-            href="/admin/claims"
+            href="/login"
             className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-white"
           >
-            View admin claims
+            Sign in
           </Link>
         </div>
       </div>

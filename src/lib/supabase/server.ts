@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cookies } from "next/headers";
+import { createServerClient as createSsrServerClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 function requireEnv(name: string): string {
@@ -8,6 +10,32 @@ function requireEnv(name: string): string {
     throw new Error(`Missing environment variable: ${name}`);
   }
   return value;
+}
+
+/** Request-scoped Supabase client backed by secure SSR cookies and the anon key. */
+export async function createServerClient(): Promise<SupabaseClient> {
+  const cookieStore = await cookies();
+
+  return createSsrServerClient(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Server Components cannot write cookies. proxy.ts refreshes them.
+          }
+        },
+      },
+    },
+  );
 }
 
 /**

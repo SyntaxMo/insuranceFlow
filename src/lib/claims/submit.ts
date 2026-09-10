@@ -13,6 +13,7 @@ import {
   getStorageBucket,
 } from "@/lib/supabase/server";
 import type { DocumentType } from "@/types/database";
+import type { AuthProfile } from "@/lib/auth/session";
 
 export interface SubmitClaimResult {
   ok: boolean;
@@ -106,14 +107,15 @@ async function uploadDocument(params: {
 
 export async function submitClaim(
   formData: FormData,
+  customer: AuthProfile,
 ): Promise<SubmitClaimResult> {
   const policyNumber = String(formData.get("policyNumber") || "").trim();
   const accident: AccidentFormInput = {
     accidentDate: String(formData.get("accidentDate") || "").trim(),
     accidentLocation: String(formData.get("accidentLocation") || "").trim(),
     description: String(formData.get("description") || "").trim(),
-    email: String(formData.get("email") || "").trim(),
-    phone: String(formData.get("phone") || "").trim(),
+    email: customer.email?.trim() || "",
+    phone: customer.phone?.trim() || "",
   };
 
   if (!policyNumber) {
@@ -132,7 +134,7 @@ export async function submitClaim(
     return { ok: false, error: documentError };
   }
 
-  const verification = await verifyPolicyByNumber(policyNumber);
+  const verification = await verifyPolicyByNumber(policyNumber, customer.id);
   if (!verification.ok) {
     return { ok: false, error: verification.error };
   }

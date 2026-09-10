@@ -15,6 +15,7 @@ export {
 
 export async function verifyPolicyByNumber(
   policyNumber: string,
+  customerUserId: string,
 ): Promise<PolicyVerificationResult> {
   const normalized = policyNumber.trim().toUpperCase();
 
@@ -53,6 +54,7 @@ export async function verifyPolicyByNumber(
       `,
       )
       .eq("policy_number", normalized)
+      .eq("user_id", customerUserId)
       .maybeSingle();
 
     if (error) {
@@ -69,7 +71,7 @@ export async function verifyPolicyByNumber(
       return {
         ok: false,
         code: "NOT_FOUND",
-        error: "No policy was found for that policy number.",
+        error: "No policy linked to your account was found with that number.",
       };
     }
 
