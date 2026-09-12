@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { LinkPolicyForm } from "@/components/dashboard/LinkPolicyForm";
+import { buttonClassName } from "@/components/ui/Forms";
 
 export default function LinkPolicyPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
-      <Link href="/dashboard" className="text-sm font-semibold text-[var(--brand-teal)] hover:text-[var(--brand-teal-deep)]">
+      <Link href="/dashboard" className={buttonClassName("secondary")}>
         ← Back to dashboard
       </Link>
       <div className="mb-7 mt-5">

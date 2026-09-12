@@ -26,4 +26,8 @@ describe("customer-facing statuses", () => {
   it("gives action-required claims a distinct readable tone", () => {
     expect(statusTone("MORE_INFO_REQUIRED")).toContain("orange");
   });
+
+  it("gives active policies a clear success treatment", () => {
+    expect(statusTone("ACTIVE")).toContain("emerald");
+  });
 });

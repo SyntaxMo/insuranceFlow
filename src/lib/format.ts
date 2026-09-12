@@ -30,6 +30,8 @@ export function formatDateTime(value: string): string {
 
 export function statusTone(status: string): string {
   const normalized = status.toUpperCase();
+  if (normalized === "ACTIVE")
+    return "bg-emerald-50 text-emerald-800 ring-emerald-300";
   if (normalized === "SUBMITTED") return "bg-sky-50 text-sky-800 ring-sky-200";
   if (normalized === "UNDER_REVIEW")
     return "bg-amber-50 text-amber-800 ring-amber-200";

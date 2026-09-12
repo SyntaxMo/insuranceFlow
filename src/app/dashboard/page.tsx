@@ -1,15 +1,10 @@
 import Link from "next/link";
 import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
-import { Alert, Card } from "@/components/ui/Forms";
+import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
 import { getCustomerDashboard } from "@/lib/claims/customer";
 import { formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
 import { requireCustomer } from "@/lib/auth/session";
 import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
-
-const primaryAction =
-  "inline-flex items-center justify-center rounded-xl bg-[var(--brand-teal)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-teal-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]";
-const secondaryAction =
-  "inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400";
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -94,7 +89,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
               <span><strong className="text-[var(--brand-navy)]">{openClaims}</strong> open {openClaims === 1 ? "claim" : "claims"}</span>
             </div>
           </div>
-          <Link href="/claim" className={`${primaryAction} w-full sm:w-auto`}>Create a new claim</Link>
+          <Link href="/claim" className={buttonClassName("primary", "w-full sm:w-auto")}>Create a new claim</Link>
         </div>
       </header>
 
@@ -113,7 +108,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
                   <div className="flex flex-wrap items-center gap-3"><p className="font-semibold text-[var(--brand-navy)]">{claim.claim_number}</p><StatusBadge status={claim.status} /></div>
                   <p className="mt-2 text-sm text-slate-700">The claims team needs additional information to continue reviewing this claim.</p>
                 </div>
-                <Link href={`/dashboard/claims/${claim.id}`} className={`${secondaryAction} shrink-0`}>View request</Link>
+                <Link href={`/dashboard/claims/${claim.id}`} className={buttonClassName("secondary", "shrink-0")}>View request</Link>
               </div>
             ))}
           </div>
@@ -124,8 +119,8 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Coverage</p><h2 id="policies-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Your policies</h2></div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-            <Link href="/dashboard/policies/link" className={`${secondaryAction} flex-1 sm:flex-none`}>Link a policy</Link>
-            <Link href="/dashboard/policies/new" className={`${primaryAction} flex-1 sm:flex-none`}>Get a policy</Link>
+            <Link href="/dashboard/policies/link" className={buttonClassName("secondary", "flex-1 sm:flex-none")}>Link a policy</Link>
+            <Link href="/dashboard/policies/new" className={buttonClassName("primary", "flex-1 sm:flex-none")}>Get a policy</Link>
           </div>
         </div>
 
@@ -136,25 +131,25 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
             {policies.map((policy) => {
               const vehicle = Array.isArray(policy.vehicles) ? (policy.vehicles[0] ?? null) : (policy.vehicles ?? null);
               return (
-                <Card key={policy.id} className="flex h-full flex-col gap-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Policy {policy.policy_number}</p><h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">{vehicleName(vehicle)}</h3>{vehicle ? <p className="mt-1 text-xs text-slate-500">Plate {vehicle.plate_number}</p> : null}</div>
-                    <div className="flex shrink-0 items-start gap-1">
+                <Card key={policy.id} className="flex h-full flex-col p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-5">
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Policy {policy.policy_number}</p><h3 className="mt-1.5 font-[family-name:var(--font-display)] text-xl leading-tight text-[var(--brand-navy)]">{vehicleName(vehicle)}</h3>{vehicle ? <p className="mt-2 text-xs text-slate-500">Plate {vehicle.plate_number}</p> : null}</div>
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <StatusBadge status={policy.status} />
                       {policy.accessType === "LINKED" ? (
                         <PolicyAccessControl policyId={policy.id} />
                       ) : null}
                     </div>
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-slate-100 py-4 text-sm">
+                  <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-slate-100 py-5 text-sm">
                     <div><dt className="text-xs text-slate-500">Coverage</dt><dd className="mt-1 font-medium text-slate-800">{policy.coverage_type}</dd></div>
                     <div><dt className="text-xs text-slate-500">Policy period</dt><dd className="mt-1 font-medium text-slate-800">{formatDate(policy.start_date)} – {formatDate(policy.end_date)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Excess</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(policy.excess_amount)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Coverage limit</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(policy.coverage_limit)}</dd></div>
                   </dl>
-                  <div className="mt-auto flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Link href={`/dashboard/policies/${policy.id}`} className={secondaryAction}>View policy</Link>
-                    <Link href="/claim" className={primaryAction}>Make a claim</Link>
+                  <div className="mt-auto flex flex-col-reverse gap-2.5 pt-5 sm:flex-row sm:justify-end">
+                    <Link href={`/dashboard/policies/${policy.id}`} className={buttonClassName("secondary", "w-full sm:w-auto")}>View policy</Link>
+                    <Link href="/claim" className={buttonClassName("primary", "w-full sm:w-auto")}>Make a claim</Link>
                   </div>
                 </Card>
               );
@@ -167,7 +162,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
         <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Claims</p><h2 id="claims-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Your claims</h2></div>
         {claims.length === 0 ? (
           <EmptyState title="No claims yet" description="If you've been involved in an accident, you can start a new motor claim here.">
-            <Link href="/claim" className={`${primaryAction} w-full sm:w-auto`}>Create a new claim</Link>
+            <Link href="/claim" className={buttonClassName("primary", "w-full sm:w-auto")}>Create a new claim</Link>
           </EmptyState>
         ) : (
           <div className="grid gap-4">
@@ -178,7 +173,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
                   <p className="mt-1 text-sm font-medium text-slate-700">{vehicleName(claim.vehicle)}</p>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500"><span>Accident {formatDate(claim.accident_date)}</span><span>Submitted {formatDate(claim.created_at)}</span><span>Latest update: {statusLabel(claim.status)}</span></div>
                 </div>
-                <Link href={`/dashboard/claims/${claim.id}`} className={`${secondaryAction} shrink-0`}>View claim</Link>
+                <Link href={`/dashboard/claims/${claim.id}`} className={buttonClassName("secondary", "shrink-0")}>View claim</Link>
               </Card>
             ))}
           </div>

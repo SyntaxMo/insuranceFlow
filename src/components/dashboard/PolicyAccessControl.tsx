@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import {
   removeLinkedPolicyAction,
   type RemovePolicyState,
@@ -12,12 +12,20 @@ const initialState: RemovePolicyState = {};
 export function PolicyAccessControl({
   policyId,
   presentation = "menu",
+  inverse = false,
 }: {
   policyId: string;
   presentation?: "menu" | "button";
+  inverse?: boolean;
 }) {
+  const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const menuRootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuItemRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const removeRef = useRef<HTMLButtonElement>(null);
   const [state, action, pending] = useActionState(
     removeLinkedPolicyAction,
     initialState,
@@ -28,26 +36,75 @@ export function PolicyAccessControl({
     setModalOpen(true);
   }
 
+  function closeConfirmation() {
+    if (pending) return;
+    setModalOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: MouseEvent) {
+      if (!menuRootRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    cancelRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !pending) {
+        setModalOpen(false);
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [modalOpen, pending]);
+
   return (
     <>
       {presentation === "menu" ? (
-        <div className="relative">
+        <div ref={menuRootRef} className="relative">
           <button
+            ref={triggerRef}
             type="button"
-            className="flex size-9 items-center justify-center rounded-lg text-xl leading-none text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+            className={`flex size-9 items-center justify-center rounded-lg text-xl leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${inverse ? "text-slate-200 hover:bg-white/10 hover:text-white focus-visible:outline-white" : "text-slate-500 hover:bg-slate-100 hover:text-[var(--brand-navy)] focus-visible:outline-slate-400"}`}
             aria-label="Policy management options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
+            aria-controls={menuOpen ? menuId : undefined}
             onClick={() => setMenuOpen((open) => !open)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setMenuOpen(true);
+                window.requestAnimationFrame(() => menuItemRef.current?.focus());
+              }
+            }}
           >
             <span aria-hidden="true">•••</span>
           </button>
           {menuOpen ? (
             <div
+              id={menuId}
               role="menu"
               className="absolute right-0 top-11 z-20 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
             >
               <button
+                ref={menuItemRef}
                 type="button"
                 role="menuitem"
                 onClick={openConfirmation}
@@ -59,7 +116,7 @@ export function PolicyAccessControl({
           ) : null}
         </div>
       ) : (
-        <Button type="button" variant="danger" onClick={openConfirmation}>
+        <Button ref={triggerRef} type="button" variant="danger" onClick={openConfirmation}>
           Remove from account
         </Button>
       )}
@@ -69,7 +126,7 @@ export function PolicyAccessControl({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !pending) setModalOpen(false);
+            if (event.target === event.currentTarget) closeConfirmation();
           }}
         >
           <div
@@ -77,6 +134,16 @@ export function PolicyAccessControl({
             aria-modal="true"
             aria-labelledby={`remove-policy-title-${policyId}`}
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+            onKeyDown={(event) => {
+              if (event.key !== "Tab") return;
+              if (event.shiftKey && document.activeElement === cancelRef.current) {
+                event.preventDefault();
+                removeRef.current?.focus();
+              } else if (!event.shiftKey && document.activeElement === removeRef.current) {
+                event.preventDefault();
+                cancelRef.current?.focus();
+              }
+            }}
           >
             <h2
               id={`remove-policy-title-${policyId}`}
@@ -95,14 +162,15 @@ export function PolicyAccessControl({
             <form action={action} className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <input type="hidden" name="policyId" value={policyId} />
               <Button
+                ref={cancelRef}
                 type="button"
                 variant="secondary"
                 disabled={pending}
-                onClick={() => setModalOpen(false)}
+                onClick={closeConfirmation}
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="danger" disabled={pending}>
+              <Button ref={removeRef} type="submit" variant="danger" disabled={pending}>
                 {pending ? "Removing…" : "Remove from account"}
               </Button>
             </form>

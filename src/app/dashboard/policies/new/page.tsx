@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@/components/ui/Forms";
+import { buttonClassName, Card } from "@/components/ui/Forms";
 
 export default function NewPolicyPlaceholderPage() {
   return (
@@ -9,7 +9,7 @@ export default function NewPolicyPlaceholderPage() {
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Get a motor policy</h1>
         <p className="mx-auto mt-3 max-w-lg text-slate-600">Get a quote and insure another vehicle through InsureFlow.</p>
         <div className="mx-auto mt-6 max-w-lg rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">Online quotes and policy purchase are coming next.</div>
-        <Link href="/dashboard" className="mt-6 inline-flex rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Back to dashboard</Link>
+        <Link href="/dashboard" className={buttonClassName("secondary", "mt-6")}>Back to dashboard</Link>
       </Card>
     </main>
   );

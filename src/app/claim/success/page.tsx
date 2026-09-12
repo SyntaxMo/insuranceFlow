@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@/components/ui/Forms";
+import { buttonClassName, Card } from "@/components/ui/Forms";
 import { requireCustomer } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function ClaimSuccessPage({
         <div className="pt-2">
           <Link
             href="/dashboard"
-            className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-teal)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--brand-teal-deep)]"
+            className={buttonClassName("primary", "px-5")}
           >
             Return to dashboard
           </Link>

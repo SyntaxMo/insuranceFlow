@@ -1,27 +1,36 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type { ComponentPropsWithRef, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+
+export function buttonClassName(
+  variant: ButtonVariant = "primary",
+  className = "",
+): string {
+  const base =
+    "inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-60";
+  const variants: Record<ButtonVariant, string> = {
+    primary:
+      "border border-transparent bg-[var(--brand-teal)] text-white shadow-sm hover:bg-[var(--brand-teal-deep)] hover:text-white focus-visible:text-white focus-visible:outline-[var(--brand-teal)] active:text-white disabled:text-white",
+    secondary:
+      "border border-slate-300 bg-white text-[var(--brand-navy)] shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-slate-400",
+    ghost:
+      "border border-transparent text-slate-600 hover:bg-slate-100 hover:text-[var(--brand-navy)] focus-visible:outline-slate-400",
+    danger:
+      "border border-rose-300 bg-white text-rose-700 hover:border-rose-400 hover:bg-rose-50 focus-visible:outline-rose-400",
+  };
+  return `${base} ${variants[variant]} ${className}`;
+}
 
 export function Button({
   variant = "primary",
   className = "",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+}: ComponentPropsWithRef<"button"> & {
+  variant?: ButtonVariant;
 }) {
-  const base =
-    "inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
-  const variants = {
-    primary:
-      "bg-[var(--brand-teal)] text-white shadow-sm hover:bg-[var(--brand-teal-deep)] focus-visible:outline-[var(--brand-teal)]",
-    secondary:
-      "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-slate-400",
-    ghost: "text-slate-600 hover:bg-slate-100 focus-visible:outline-slate-400",
-    danger:
-      "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 focus-visible:outline-rose-400",
-  };
-
   return (
     <button
-      className={`${base} ${variants[variant]} ${className}`}
+      className={buttonClassName(variant, className)}
       {...props}
     />
   );
