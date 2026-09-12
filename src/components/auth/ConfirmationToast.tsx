@@ -2,15 +2,27 @@
 
 import { useEffect, useState } from "react";
 
-export function ConfirmationToast() {
+export function ConfirmationToast({
+  message = "Your email has been confirmed.",
+  marker = "confirmed",
+}: {
+  message?: string;
+  marker?: string;
+}) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    // Remove the one-time marker without navigating and unmounting the toast.
-    window.history.replaceState(window.history.state, "", "/dashboard");
+    // Consume only this one-time marker without navigating or losing other state.
+    const url = new URL(window.location.href);
+    url.searchParams.delete(marker);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
     const timeout = window.setTimeout(() => setVisible(false), 5000);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [marker]);
 
   if (!visible) return null;
 
@@ -26,7 +38,7 @@ export function ConfirmationToast() {
       >
         ✓
       </span>
-      Your email has been confirmed.
+      {message}
     </div>
   );
 }

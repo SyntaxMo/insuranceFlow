@@ -27,4 +27,20 @@ describe("ConfirmationToast", () => {
     act(() => vi.advanceTimersByTime(5000));
     expect(screen.queryByRole("status")).toBeNull();
   });
+
+  it("consumes only the policy-link marker and keeps unrelated query state", () => {
+    window.history.replaceState({}, "", "/dashboard?policyLinked=1&tab=claims");
+
+    render(
+      <ConfirmationToast
+        marker="policyLinked"
+        message="Policy linked successfully."
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Policy linked successfully.",
+    );
+    expect(window.location.search).toBe("?tab=claims");
+  });
 });

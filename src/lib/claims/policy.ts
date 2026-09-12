@@ -53,8 +53,7 @@ export async function verifyPolicyByNumber(
         )
       `,
       )
-      .eq("policy_number", normalized)
-      .eq("user_id", customerUserId)
+      .ilike("policy_number", normalized)
       .maybeSingle();
 
     if (error) {
@@ -73,6 +72,31 @@ export async function verifyPolicyByNumber(
         code: "NOT_FOUND",
         error: "No policy linked to your account was found with that number.",
       };
+    }
+
+    if (data.user_id !== customerUserId) {
+      const { data: link, error: linkError } = await supabase
+        .from("customer_policy_links")
+        .select("id")
+        .eq("portal_user_id", customerUserId)
+        .eq("policy_id", data.id)
+        .maybeSingle();
+
+      if (linkError) {
+        console.error("Linked policy authorization failed:", linkError.message);
+        return {
+          ok: false,
+          code: "SERVER",
+          error: "We could not verify this policy right now. Please try again shortly.",
+        };
+      }
+      if (!link) {
+        return {
+          ok: false,
+          code: "NOT_FOUND",
+          error: "No policy linked to your account was found with that number.",
+        };
+      }
     }
 
     return evaluatePolicyEligibility(data as Policy);

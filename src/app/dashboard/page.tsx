@@ -4,6 +4,7 @@ import { Alert, Card } from "@/components/ui/Forms";
 import { getCustomerDashboard } from "@/lib/claims/customer";
 import { formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
 import { requireCustomer } from "@/lib/auth/session";
+import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
 
 const primaryAction =
   "inline-flex items-center justify-center rounded-xl bg-[var(--brand-teal)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-teal-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]";
@@ -22,7 +23,7 @@ function vehicleName(vehicle: { make: string; model: string; year: number; plate
   return vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : "Vehicle details unavailable";
 }
 
-function EmptyState({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function EmptyState({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
   return (
     <Card className="flex flex-col items-start gap-5 border-dashed bg-slate-50/50 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex max-w-2xl gap-4">
@@ -36,12 +37,12 @@ function EmptyState({ title, description, children }: { title: string; descripti
           <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
         </div>
       </div>
-      <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">{children}</div>
+      {children ? <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">{children}</div> : null}
     </Card>
   );
 }
 
-export default async function CustomerDashboardPage({ searchParams }: { searchParams: Promise<{ confirmed?: string }> }) {
+export default async function CustomerDashboardPage({ searchParams }: { searchParams: Promise<{ confirmed?: string; policyLinked?: string; policyRemoved?: string }> }) {
   const params = await searchParams;
   const profile = await requireCustomer();
   const { policies, claims, error } = await getCustomerDashboard(profile.id);
@@ -69,6 +70,18 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       {params.confirmed === "1" ? <ConfirmationToast /> : null}
+      {params.policyLinked === "1" ? (
+        <ConfirmationToast
+          marker="policyLinked"
+          message="Policy linked successfully."
+        />
+      ) : null}
+      {params.policyRemoved === "1" ? (
+        <ConfirmationToast
+          marker="policyRemoved"
+          message="Policy removed from your account."
+        />
+      ) : null}
 
       <header className="rounded-3xl border border-slate-200/80 bg-white px-5 py-6 shadow-[0_18px_55px_-38px_rgba(15,23,42,0.45)] sm:px-7 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -108,25 +121,30 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
       ) : null}
 
       <section className="mt-10" aria-labelledby="policies-heading">
-        <div className="mb-4 flex items-end justify-between gap-4">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Coverage</p><h2 id="policies-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Your policies</h2></div>
-          {policies.length > 0 ? <Link href="/dashboard/policies/link" className="text-sm font-semibold text-[var(--brand-teal)] hover:text-[var(--brand-teal-deep)]">Link a policy</Link> : null}
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+            <Link href="/dashboard/policies/link" className={`${secondaryAction} flex-1 sm:flex-none`}>Link a policy</Link>
+            <Link href="/dashboard/policies/new" className={`${primaryAction} flex-1 sm:flex-none`}>Get a policy</Link>
+          </div>
         </div>
 
         {policies.length === 0 ? (
-          <EmptyState title="No policies linked yet" description="Link an existing policy or get motor insurance to start managing your coverage online.">
-            <Link href="/dashboard/policies/link" className={`${secondaryAction} flex-1 sm:flex-none`}>Link existing policy</Link>
-            <Link href="/dashboard/policies/new" className={`${primaryAction} flex-1 sm:flex-none`}>Get a policy</Link>
-          </EmptyState>
+          <EmptyState title="No policies linked yet" description="Link an existing policy or get motor insurance to start managing your coverage online." />
         ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid items-stretch gap-5 md:grid-cols-2">
             {policies.map((policy) => {
               const vehicle = Array.isArray(policy.vehicles) ? (policy.vehicles[0] ?? null) : (policy.vehicles ?? null);
               return (
                 <Card key={policy.id} className="flex h-full flex-col gap-5">
                   <div className="flex items-start justify-between gap-4">
                     <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Policy {policy.policy_number}</p><h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">{vehicleName(vehicle)}</h3>{vehicle ? <p className="mt-1 text-xs text-slate-500">Plate {vehicle.plate_number}</p> : null}</div>
-                    <StatusBadge status={policy.status} />
+                    <div className="flex shrink-0 items-start gap-1">
+                      <StatusBadge status={policy.status} />
+                      {policy.accessType === "LINKED" ? (
+                        <PolicyAccessControl policyId={policy.id} />
+                      ) : null}
+                    </div>
                   </div>
                   <dl className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-slate-100 py-4 text-sm">
                     <div><dt className="text-xs text-slate-500">Coverage</dt><dd className="mt-1 font-medium text-slate-800">{policy.coverage_type}</dd></div>

@@ -4,14 +4,17 @@ import { useActionState, useEffect, useState } from "react";
 import {
   lookupExistingPolicyAction,
   sendPolicyVerificationCodeAction,
+  verifyPolicyCodeAction,
   type PolicyLookupState,
   type SendPolicyCodeState,
+  type VerifyPolicyCodeState,
 } from "@/app/dashboard/policies/link/actions";
 import { statusLabel, statusTone } from "@/lib/format";
 import { Alert, Button, Card, Field, TextInput } from "@/components/ui/Forms";
 
 const initialState: PolicyLookupState = {};
 const initialSendState: SendPolicyCodeState = {};
+const initialVerifyState: VerifyPolicyCodeState = {};
 
 function CooldownSubmitButton({
   initialSeconds,
@@ -68,16 +71,19 @@ function VerificationCodeStep({
     sendPolicyVerificationCodeAction,
     initialSendState,
   );
+  const [verifyState, verifyAction, verifying] = useActionState(
+    verifyPolicyCodeAction,
+    initialVerifyState,
+  );
   const cooldownKey = state.cooldownToken || 0;
   const cooldownSeconds = state.cooldownSeconds || 0;
 
   return (
-    <form action={action} className="mt-6 border-t border-slate-100 pt-6">
-      <input type="hidden" name="policyNumber" value={policyNumber} />
-      <input type="hidden" name="email" value={email} />
-
+    <div className="mt-6 border-t border-slate-100 pt-6">
       {!state.sent ? (
-        <>
+        <form action={action}>
+          <input type="hidden" name="policyNumber" value={policyNumber} />
+          <input type="hidden" name="email" value={email} />
           <p className="text-sm text-slate-500">Verification code will be sent to:</p>
           <p className="mt-1 font-semibold text-[var(--brand-navy)]">{initialMaskedEmail}</p>
           {state.message ? <div className="mt-4"><Alert tone="error">{state.message}</Alert></div> : null}
@@ -86,7 +92,7 @@ function VerificationCodeStep({
             initialSeconds={cooldownSeconds}
             pending={pending}
           />
-        </>
+        </form>
       ) : (
         <div className="space-y-5">
           <Alert tone="success">
@@ -94,38 +100,47 @@ function VerificationCodeStep({
             <span className="mt-1 block">We sent a code to {state.maskedEmail}.</span>
           </Alert>
 
-          <Field
-            label="Verification code"
-            htmlFor="verificationCode"
-            hint="Enter the 6-digit code from the email."
-          >
-            <TextInput
-              id="verificationCode"
-              name="verificationCode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              placeholder="000000"
-              className="max-w-52 text-center text-xl font-semibold tracking-[0.35em]"
-            />
-          </Field>
+          <form action={verifyAction} className="space-y-5" noValidate>
+            <input type="hidden" name="policyNumber" value={policyNumber} />
+            <input type="hidden" name="email" value={email} />
+            <Field
+              label="Verification code"
+              htmlFor="verificationCode"
+              hint="Enter the 6-digit code from the email."
+              error={verifyState.fieldError}
+            >
+              <TextInput
+                id="verificationCode"
+                name="verificationCode"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="000000"
+                className="max-w-52 text-center text-xl font-semibold tracking-[0.35em]"
+                aria-invalid={Boolean(verifyState.fieldError)}
+              />
+            </Field>
+            {verifyState.message ? <Alert tone="error">{verifyState.message}</Alert> : null}
+            <Button type="submit" disabled={verifying || pending} className="sm:min-w-32">
+              {verifying ? "Verifying…" : "Verify code"}
+            </Button>
+          </form>
 
           {state.message ? <Alert tone="error">{state.message}</Alert> : null}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button type="button" disabled className="sm:min-w-32">
-              Verify code
-            </Button>
+          <form action={action}>
+            <input type="hidden" name="policyNumber" value={policyNumber} />
+            <input type="hidden" name="email" value={email} />
             <CooldownSubmitButton
               key={cooldownKey}
               initialSeconds={cooldownSeconds}
-              pending={pending}
+              pending={pending || verifying}
               resend
             />
-          </div>
+          </form>
         </div>
       )}
-    </form>
+    </div>
   );
 }
 

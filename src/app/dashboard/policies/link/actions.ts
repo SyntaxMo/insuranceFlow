@@ -10,6 +10,9 @@ import {
   type VerifiedPolicyMatch,
 } from "@/lib/policies/link-existing";
 import { issuePolicyVerificationCode } from "@/lib/policies/policy-link-otp";
+import { verifyPolicyLinkCode } from "@/lib/policies/policy-link-verification";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const policyLookupSchema = z.object({
   policyNumber: z
@@ -38,6 +41,15 @@ export type SendPolicyCodeState = {
   cooldownToken?: number;
   message?: string;
 };
+
+export type VerifyPolicyCodeState = {
+  fieldError?: string;
+  message?: string;
+};
+
+const verificationCodeSchema = z
+  .string()
+  .regex(/^\d{6}$/, "Enter the 6-digit verification code.");
 
 export async function lookupExistingPolicyAction(
   _previous: PolicyLookupState,
@@ -129,4 +141,53 @@ export async function sendPolicyVerificationCodeAction(
         "We couldn't send a verification code right now. Please try again.",
     };
   }
+}
+
+export async function verifyPolicyCodeAction(
+  _previous: VerifyPolicyCodeState,
+  formData: FormData,
+): Promise<VerifyPolicyCodeState> {
+  const customer = await requireCustomer();
+  const lookup = policyLookupSchema.safeParse({
+    policyNumber: formData.get("policyNumber"),
+    email: formData.get("email"),
+  });
+  const code = verificationCodeSchema.safeParse(formData.get("verificationCode"));
+
+  if (!code.success) {
+    return { fieldError: code.error.issues[0]?.message };
+  }
+  if (!lookup.success) return { message: POLICY_LOOKUP_ERROR };
+
+  try {
+    const result = await verifyPolicyLinkCode({
+      requestingUserId: customer.id,
+      policyNumber: lookup.data.policyNumber,
+      submittedEmail: lookup.data.email,
+      otp: code.data,
+    });
+
+    if (!result.ok) {
+      const messages: Record<typeof result.reason, string> = {
+        policy: "This verification code is no longer valid. Request a new code.",
+        invalid: "This verification code is no longer valid. Request a new code.",
+        expired: "This verification code has expired. Request a new code.",
+        incorrect: "The verification code is incorrect.",
+        attempts: "Too many incorrect attempts. Request a new verification code.",
+        linked_other: "This policy is already linked to another account.",
+        configuration: "We couldn't verify the code right now. Please try again.",
+        database: "We couldn't verify the code right now. Please try again.",
+      };
+      return { message: messages[result.reason] };
+    }
+  } catch (error) {
+    console.error(
+      "Policy verification exception:",
+      error instanceof Error ? error.message : "Unknown server error",
+    );
+    return { message: "We couldn't verify the code right now. Please try again." };
+  }
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard?policyLinked=1");
 }

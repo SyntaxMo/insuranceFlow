@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { statusLabel, statusTone } from "@/lib/format";
+import { formatCurrency, statusLabel, statusTone } from "@/lib/format";
+
+describe("Bahraini dinar formatting", () => {
+  it.each([
+    [150, "BHD 150"],
+    [12000, "BHD 12,000"],
+    [184.5, "BHD 184.500"],
+    [12.345, "BHD 12.345"],
+  ])("formats %s as %s", (amount, expected) => {
+    expect(formatCurrency(amount)).toBe(expected);
+  });
+});
 
 describe("customer-facing statuses", () => {
   it.each([
