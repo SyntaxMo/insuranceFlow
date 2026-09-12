@@ -1,15 +1,20 @@
 import Link from "next/link";
-import { Card } from "@/components/ui/Forms";
+import { LinkPolicyForm } from "@/components/dashboard/LinkPolicyForm";
 
-export default function LinkPolicyPlaceholderPage() {
+export default function LinkPolicyPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
-      <Card className="text-center">
+    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
+      <Link href="/dashboard" className="text-sm font-semibold text-[var(--brand-teal)] hover:text-[var(--brand-teal-deep)]">
+        ← Back to dashboard
+      </Link>
+      <div className="mb-7 mt-5">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Policies</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Link an existing policy</h1>
-        <p className="mx-auto mt-3 max-w-lg text-slate-600">This feature is coming next. Your current policies and claims are unchanged.</p>
-        <Link href="/dashboard" className="mt-6 inline-flex rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Back to dashboard</Link>
-      </Card>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)] sm:text-4xl">Link an existing policy</h1>
+        <p className="mt-3 max-w-xl text-base leading-7 text-slate-600">
+          Enter the policy number and the email registered with the policy. Nothing will be linked until verification is complete.
+        </p>
+      </div>
+      <LinkPolicyForm />
     </main>
   );
 }
