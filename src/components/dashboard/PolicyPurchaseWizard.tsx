@@ -60,6 +60,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [quoting, setQuoting] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const initialState: IssuePolicyState = { status: "idle" };
   const [issueState, issueAction] = useActionState(issueDemoPolicy, initialState);
 
@@ -67,6 +68,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
     setValues((current) => ({ ...current, [name]: value }));
     setFieldErrors((current) => ({ ...current, [name]: "" }));
     setQuoteView(null);
+    setConsentAccepted(false);
   };
 
   const continueVehicle = () => {
@@ -157,7 +159,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
               { id: "COMPREHENSIVE" as const, description: "Covers damage to your insured vehicle subject to the policy terms and conditions.", excess: 150, limit: Number(values.estimatedVehicleValue) },
               { id: "THIRD_PARTY" as const, description: "Covers third-party liability subject to the policy terms and conditions.", excess: 0, limit: 100000 },
             ]).map((option) => (
-              <button key={option.id} type="button" onClick={() => { setCoverage(option.id); setMessage(null); }} className={`flex h-full min-w-0 flex-col rounded-2xl border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)] sm:p-6 ${coverage === option.id ? "border-[var(--brand-teal)] bg-teal-50/70 shadow-[0_16px_35px_-28px_rgba(13,148,136,0.8)] ring-1 ring-[var(--brand-teal)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"}`} aria-pressed={coverage === option.id} aria-label={`${formatCoverageType(option.id)} coverage${coverage === option.id ? ", selected" : ""}`}>
+              <button key={option.id} type="button" onClick={() => { setCoverage(option.id); setMessage(null); setConsentAccepted(false); }} className={`flex h-full min-w-0 flex-col rounded-2xl border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)] sm:p-6 ${coverage === option.id ? "border-[var(--brand-teal)] bg-teal-50/70 shadow-[0_16px_35px_-28px_rgba(13,148,136,0.8)] ring-1 ring-[var(--brand-teal)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"}`} aria-pressed={coverage === option.id} aria-label={`${formatCoverageType(option.id)} coverage${coverage === option.id ? ", selected" : ""}`}>
                 <span className="flex w-full flex-wrap items-start justify-between gap-3">
                   <span className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">{formatCoverageType(option.id)}</span>
                   {coverage === option.id ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-200"><span aria-hidden="true">✓</span> Selected</span> : null}
@@ -177,9 +179,13 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--brand-teal)]">Simulated quote</p>
           <h2 id="quote-step-heading" className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Your annual quote</h2>
           <p className="mt-2 text-sm text-slate-600">This quote is generated for the InsureFlow demonstration experience.</p>
-          <div className="mt-6 grid gap-5 rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(13rem,16rem)] lg:items-center">
+          <div data-slot="quote-summary" className="mt-6 grid items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.45)] sm:p-6 md:grid-cols-[minmax(0,1fr)_minmax(12rem,15rem)] md:gap-6">
             <dl className="min-w-0"><SummaryRow label="Vehicle" value={`${values.make} ${values.model} (${values.year})`} /><SummaryRow label="Plate" value={values.plateNumber} /><SummaryRow label="Coverage" value={formatCoverageType(quoteView.quote.coverageLabel)} /><SummaryRow label="Estimated vehicle value" value={formatCurrency(Number(values.estimatedVehicleValue))} /><SummaryRow label="Excess" value={formatCurrency(quoteView.quote.excess)} /><SummaryRow label="Coverage limit" value={formatCurrency(quoteView.quote.coverageLimit)} /><SummaryRow label="Policy term" value="12 months" /></dl>
-            <div className="flex min-h-36 flex-col justify-center rounded-2xl bg-[var(--brand-navy)] p-5 text-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.9)] sm:p-6"><p className="text-sm font-medium text-slate-300">Annual premium</p><p className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-tight sm:text-4xl">{formatCurrency(quoteView.quote.annualPremium)}</p><p className="mt-2 text-xs text-slate-400">For 12 months</p></div>
+            <aside aria-label="Annual premium summary" data-slot="premium-summary" className="rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white px-5 py-5 shadow-[0_14px_30px_-26px_rgba(13,148,136,0.7)] sm:px-6 md:px-5">
+              <p className="text-sm font-semibold text-teal-800">Annual premium</p>
+              <p className="mt-1.5 font-[family-name:var(--font-display)] text-3xl leading-tight text-[var(--brand-navy)] sm:text-4xl">{formatCurrency(quoteView.quote.annualPremium)}</p>
+              <p className="mt-1.5 text-xs font-medium text-slate-500">For 12 months</p>
+            </aside>
           </div>
           <details className="group mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3.5"><summary className="cursor-pointer font-semibold text-[var(--brand-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">How was this calculated?</summary><div className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600"><p className="leading-6">Your quote is based on the selected coverage, estimated vehicle value, and vehicle age.</p><dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2"><div><dt className="text-xs text-slate-500">Coverage</dt><dd className="mt-1 font-medium text-slate-800">{formatCoverageType(quoteView.quote.coverageLabel)}</dd></div><div><dt className="text-xs text-slate-500">Estimated vehicle value</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(Number(values.estimatedVehicleValue))}</dd></div><div><dt className="text-xs text-slate-500">Vehicle age adjustment</dt><dd className="mt-1 font-medium text-slate-800">{quoteView.quote.adjustmentLabel}</dd></div><div><dt className="text-xs text-slate-500">Annual premium</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(quoteView.quote.annualPremium)}</dd></div></dl><p className="mt-4 leading-6">The final premium is calculated using InsureFlow&apos;s simplified demonstration pricing rules.</p><p className="mt-2 text-xs leading-5 text-slate-500">These are demonstration pricing rules and are not real insurance underwriting rates.</p></div></details>
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(2)}>Back</Button><Button type="button" className="w-full sm:w-auto" onClick={() => setStep(4)}>Review details</Button></div>
@@ -196,8 +202,21 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
             <div className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"><h3 className="font-semibold text-[var(--brand-navy)]">Coverage</h3><dl className="mt-3"><SummaryRow label="Type" value={formatCoverageType(quoteView.quote.coverageLabel)} /><SummaryRow label="Excess" value={formatCurrency(quoteView.quote.excess)} /><SummaryRow label="Limit" value={formatCurrency(quoteView.quote.coverageLimit)} /><SummaryRow label="Dates" value={`${formatDate(quoteView.startDate)} – ${formatDate(quoteView.endDate)}`} /></dl></div>
             <div className="flex h-full min-w-0 flex-col justify-between rounded-2xl border border-teal-100 bg-teal-50/50 p-5 sm:p-6 md:min-h-52"><div><h3 className="font-semibold text-[var(--brand-navy)]">Price</h3><p className="mt-5 text-sm text-slate-500">Annual premium</p><p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight text-[var(--brand-navy)] sm:text-4xl">{formatCurrency(quoteView.quote.annualPremium)}</p></div><p className="mt-6 inline-flex self-start rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-200">12-month policy</p></div>
           </div>
-          <div data-slot="policy-consent" className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">By continuing, you confirm that the information entered for this demonstration is correct.</div>
-          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(3)}>Back</Button><Button type="button" className="w-full sm:w-auto" onClick={() => setStep(5)}>Continue to payment</Button></div>
+          <div data-slot="policy-consent" className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span className="relative mt-0.5 block size-5 shrink-0">
+                <input id="purchase-consent" type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="peer absolute inset-0 z-10 size-5 cursor-pointer opacity-0" />
+                <span data-testid="purchase-consent-control" aria-hidden="true" className={`pointer-events-none flex size-5 items-center justify-center rounded-md border transition peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--brand-teal)] peer-focus-visible:ring-offset-2 ${consentAccepted ? "border-[var(--brand-teal)] bg-[var(--brand-teal)] text-white" : "border-slate-400 bg-white text-transparent"}`}>
+                  <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>
+                </span>
+              </span>
+              <div className="min-w-0">
+                <label htmlFor="purchase-consent" className="block cursor-pointer text-sm leading-6 text-slate-700">I confirm that the information provided is correct and I agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--brand-teal)] underline underline-offset-2 hover:text-[var(--brand-teal-deep)]">Terms &amp; Conditions</Link>. I understand that InsureFlow is a demonstration platform and that this quote, payment, and policy are simulated.</label>
+                <nav aria-label="Purchase information" className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium"><Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-slate-600 underline underline-offset-2 hover:text-[var(--brand-navy)]">Privacy Policy</Link><Link href="/disclaimer" target="_blank" rel="noopener noreferrer" className="text-slate-600 underline underline-offset-2 hover:text-[var(--brand-navy)]">Insurance &amp; Demo Disclaimer</Link></nav>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(3)}>Back</Button><Button type="button" className="w-full sm:w-auto" disabled={!consentAccepted} onClick={() => setStep(5)}>Continue to payment</Button></div>
         </section>
       ) : null}
 
@@ -207,7 +226,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
           <p className="mt-2 text-sm text-slate-600">Complete the demonstration payment to issue this policy to your account.</p>
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm text-slate-500">Annual premium</p><p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight text-[var(--brand-navy)] sm:text-4xl">{formatCurrency(quoteView.quote.annualPremium)}</p></div><p className="text-sm font-medium text-slate-500">12-month policy</p></div><div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">This is a simulated payment for the InsureFlow portfolio demonstration. No real payment will be processed.</div><dl className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"><dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Payment method</dt><dd className="mt-1 font-semibold text-[var(--brand-navy)]">Demo payment</dd></dl></div>
           <form action={issueAction} className="mt-7">
-            {Object.entries({ ...values, coverage, requestId }).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
+            {Object.entries({ ...values, coverage, requestId, consentAccepted: consentAccepted ? "true" : "false" }).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(4)}>Back</Button><PaymentButton /></div>
           </form>
         </section>

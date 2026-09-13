@@ -27,6 +27,15 @@ async function reachCoverageStep() {
   return user;
 }
 
+async function reachReviewStep() {
+  const user = await reachCoverageStep();
+  await user.click(screen.getByRole("button", { name: "Comprehensive coverage" }));
+  await user.click(screen.getByRole("button", { name: "See your quote" }));
+  await screen.findByRole("heading", { name: "Your annual quote" });
+  await user.click(screen.getByRole("button", { name: "Review details" }));
+  return user;
+}
+
 describe("PolicyPurchaseWizard presentation", () => {
   afterEach(cleanup);
 
@@ -65,9 +74,36 @@ describe("PolicyPurchaseWizard presentation", () => {
     await user.click(screen.getByRole("button", { name: "See your quote" }));
 
     expect(await screen.findByRole("heading", { name: "Your annual quote" })).toBeTruthy();
+    expect(screen.getByRole("complementary", { name: "Annual premium summary" })).toBeTruthy();
+    expect(screen.getByText("For 12 months")).toBeTruthy();
     expect(screen.getAllByText("Comprehensive").length).toBeGreaterThan(0);
     expect(screen.getByText("Your quote is based on the selected coverage, estimated vehicle value, and vehicle age.")).toBeTruthy();
     expect(screen.getByText("These are demonstration pricing rules and are not real insurance underwriting rates.")).toBeTruthy();
     expect(screen.queryByText(/published demonstration rules/i)).toBeNull();
+  });
+
+  it("requires consent before payment and keeps legal pages in new tabs", async () => {
+    const user = await reachReviewStep();
+    const checkbox = screen.getByRole("checkbox") as HTMLInputElement;
+    const continueButton = screen.getByRole("button", { name: "Continue to payment" }) as HTMLButtonElement;
+    expect(checkbox.checked).toBe(false);
+    expect(continueButton.disabled).toBe(true);
+    expect(screen.getByTestId("purchase-consent-control").className).toContain("border-slate-400");
+
+    const terms = screen.getByRole("link", { name: "Terms & Conditions" });
+    expect(terms.getAttribute("href")).toBe("/terms");
+    expect(terms.getAttribute("target")).toBe("_blank");
+    expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("target")).toBe("_blank");
+    expect(screen.getByRole("link", { name: "Insurance & Demo Disclaimer" }).getAttribute("target")).toBe("_blank");
+
+    await user.click(checkbox);
+    expect(checkbox.checked).toBe(true);
+    expect(screen.getByTestId("purchase-consent-control").className).toContain("bg-[var(--brand-teal)]");
+    expect(continueButton.disabled).toBe(false);
+    await user.click(continueButton);
+    expect(screen.getByRole("heading", { name: "Payment" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
   });
 });

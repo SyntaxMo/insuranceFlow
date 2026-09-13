@@ -25,6 +25,7 @@ function validForm() {
   form.set("estimatedVehicleValue", "9500");
   form.set("coverage", "COMPREHENSIVE");
   form.set("requestId", requestId);
+  form.set("consentAccepted", "true");
   return form;
 }
 
@@ -73,6 +74,23 @@ describe("demo policy actions", () => {
     expect(result).toMatchObject({
       status: "error",
       fieldErrors: { plateNumber: "Enter a valid Bahrain plate number using 5 or 6 digits." },
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, "false", "yes", "1"])("rejects a manipulated issuance request when consent is %s", async (consent) => {
+    const rpc = vi.fn();
+    createServiceRoleClientMock.mockReturnValue({ rpc });
+    const form = validForm();
+    if (consent === undefined) form.delete("consentAccepted");
+    else form.set("consentAccepted", consent);
+
+    const result = await issueDemoPolicy({ status: "idle" }, form);
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "You must accept the Terms & Conditions before completing this simulated purchase.",
+      fieldErrors: { consentAccepted: "You must accept the Terms & Conditions before completing this simulated purchase." },
     });
     expect(rpc).not.toHaveBeenCalled();
   });

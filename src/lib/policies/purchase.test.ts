@@ -27,7 +27,7 @@ describe("vehicle purchase validation", () => {
   });
 
   it("requires a server idempotency token and known coverage", () => {
-    const result = policyPurchaseSchema.safeParse({ make: "Toyota", model: "Corolla", year: "2024", plateNumber: "12345", vin: "", estimatedVehicleValue: "10000", coverage: "UNKNOWN", requestId: "not-a-uuid" });
+    const result = policyPurchaseSchema.safeParse({ make: "Toyota", model: "Corolla", year: "2024", plateNumber: "12345", vin: "", estimatedVehicleValue: "10000", coverage: "UNKNOWN", requestId: "not-a-uuid", consentAccepted: "false" });
     expect(result.success).toBe(false);
   });
 });

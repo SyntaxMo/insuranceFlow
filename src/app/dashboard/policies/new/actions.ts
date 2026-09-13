@@ -65,9 +65,15 @@ export async function issueDemoPolicy(
     estimatedVehicleValue: formData.get("estimatedVehicleValue"),
     coverage: formData.get("coverage"),
     requestId: formData.get("requestId"),
+    consentAccepted: formData.get("consentAccepted"),
   });
   if (!parsed.success) {
-    return { status: "error", message: "Check the policy details and try again.", fieldErrors: flattenPurchaseErrors(parsed.error) };
+    const fieldErrors = flattenPurchaseErrors(parsed.error);
+    return {
+      status: "error",
+      message: fieldErrors.consentAccepted ?? "Check the policy details and try again.",
+      fieldErrors,
+    };
   }
 
   // Client-supplied price, dates, status, IDs, and policy numbers are deliberately ignored.

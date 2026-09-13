@@ -23,6 +23,9 @@ export const vehiclePurchaseSchema = z.object({
 export const policyPurchaseSchema = vehiclePurchaseSchema.extend({
   coverage: z.enum(COVERAGE_OPTIONS, { error: "Choose a coverage option." }),
   requestId: z.string().uuid("Unable to identify this purchase request. Refresh and try again."),
+  consentAccepted: z.literal("true", {
+    error: "You must accept the Terms & Conditions before completing this simulated purchase.",
+  }),
 });
 
 export const quoteRequestSchema = vehiclePurchaseSchema.extend({
