@@ -1,0 +1,50 @@
+// @vitest-environment jsdom
+
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getAuthenticatedProfileMock } = vi.hoisted(() => ({ getAuthenticatedProfileMock: vi.fn() }));
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/app/(auth)/actions", () => ({ signOutAction: vi.fn() }));
+vi.mock("@/lib/auth/session", () => ({
+  getAuthenticatedProfile: getAuthenticatedProfileMock,
+  isStaffRole: (role: string) => role === "CLAIMS_OFFICER" || role === "ADMIN",
+}));
+
+import { SiteFooter, SiteHeader } from "@/components/layout/SiteChrome";
+
+describe("shared branded chrome", () => {
+  beforeEach(() => getAuthenticatedProfileMock.mockResolvedValue(null));
+  afterEach(cleanup);
+
+  it("uses the supplied logo and public routes", async () => {
+    render(await SiteHeader());
+    expect(screen.getByRole("link", { name: "InsureFlow home" }).getAttribute("href")).toBe("/");
+    expect(screen.getByTestId("insureflow-logo").getAttribute("src")).toContain("insureflow-mark.webp");
+    expect(screen.getByRole("link", { name: "Insurance" }).getAttribute("href")).toBe("/#insurance");
+    expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/#claims");
+    expect(screen.getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("/#how-it-works");
+    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
+    expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe("/signup");
+    expect(screen.queryByRole("link", { name: "Dashboard" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "New Claim" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign Out" })).toBeNull();
+  });
+
+  it("preserves authenticated customer navigation", async () => {
+    getAuthenticatedProfileMock.mockResolvedValue({ role: "CUSTOMER" });
+    render(await SiteHeader());
+    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/dashboard");
+    expect(screen.getByRole("link", { name: "New Claim" }).getAttribute("href")).toBe("/claim");
+    expect(screen.getByRole("button", { name: "Sign Out" })).toBeTruthy();
+  });
+
+  it("keeps the compact legal footer and new brand lockup", () => {
+    render(<SiteFooter />);
+    expect(screen.getByText("Motor insurance workflows, made clearer.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/terms");
+    expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/privacy");
+    expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
+  });
+});

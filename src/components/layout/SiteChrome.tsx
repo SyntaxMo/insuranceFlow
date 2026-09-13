@@ -1,39 +1,23 @@
 import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
+import { BrandLockup } from "@/components/brand/Brand";
+import { buttonClassName } from "@/components/ui/Forms";
 import { getAuthenticatedProfile, isStaffRole } from "@/lib/auth/session";
+
+const navLinkClass = "rounded-lg px-1.5 py-2 text-sm font-medium text-slate-600 transition hover:text-[var(--brand-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]";
 
 export async function SiteHeader() {
   const profile = await getAuthenticatedProfile();
   return (
-    <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-navy)] text-sm font-semibold tracking-wide text-white shadow-sm transition group-hover:bg-[var(--brand-navy-deep)]">
-            IF
-          </span>
-          <span className="font-[family-name:var(--font-display)] text-xl tracking-tight text-[var(--brand-navy)]">
-            InsureFlow
-          </span>
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/88 shadow-[0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl">
+      <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
+        <Link href="/" aria-label="InsureFlow home" className="group shrink-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">
+          <BrandLockup compactOnMobile eager markClassName="size-10 transition-transform duration-300 group-hover:scale-[1.04]" />
         </Link>
-        <nav className="flex items-center gap-3 text-sm font-medium text-slate-600">
-          {profile?.role === "CUSTOMER" ? (
-            <>
-              <Link href="/dashboard" className="transition hover:text-[var(--brand-navy)]">Dashboard</Link>
-              <Link href="/claim" className="transition hover:text-[var(--brand-navy)]">New Claim</Link>
-            </>
-          ) : profile && isStaffRole(profile.role) ? (
-            <Link href="/admin/claims" className="transition hover:text-[var(--brand-navy)]">Claims</Link>
-          ) : (
-            <>
-              <Link href="/login" className="transition hover:text-[var(--brand-navy)]">Sign in</Link>
-              <Link href="/signup" className="rounded-lg border border-slate-200 px-3 py-1.5 transition hover:border-slate-300 hover:bg-slate-50">Register</Link>
-            </>
-          )}
-          {profile ? (
-            <form action={signOutAction}>
-              <button type="submit" className="rounded-lg border border-slate-200 px-3 py-1.5 transition hover:border-slate-300 hover:bg-slate-50">Sign Out</button>
-            </form>
-          ) : null}
+        <nav aria-label="Primary navigation" className="flex min-w-0 items-center gap-2 sm:gap-3">
+          {!profile ? <div className="mr-2 hidden items-center gap-5 lg:flex"><Link href="/#insurance" className={navLinkClass}>Insurance</Link><Link href="/#claims" className={navLinkClass}>Claims</Link><Link href="/#how-it-works" className={navLinkClass}>How it works</Link><Link href="/disclaimer" className={navLinkClass}>Help</Link></div> : null}
+          {profile?.role === "CUSTOMER" ? <><Link href="/dashboard" className={navLinkClass}>Dashboard</Link><Link href="/claim" className={`${navLinkClass} hidden min-[420px]:inline-flex`}>New Claim</Link></> : profile && isStaffRole(profile.role) ? <Link href="/admin/claims" className={navLinkClass}>Claims</Link> : <><Link href="/login" className={navLinkClass}>Sign in</Link><Link href="/signup" className={buttonClassName("primary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Create account</Link></>}
+          {profile ? <form action={signOutAction}><button type="submit" className={buttonClassName("secondary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Sign Out</button></form> : null}
         </nav>
       </div>
     </header>
@@ -42,14 +26,10 @@ export async function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-slate-200/80 bg-white/60">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>© {new Date().getFullYear()} InsureFlow. Motor claims made clear.</p>
-        <nav aria-label="Legal information" className="flex flex-wrap gap-x-4 gap-y-2">
-          <Link href="/terms" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Terms</Link>
-          <Link href="/privacy" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Privacy</Link>
-          <Link href="/disclaimer" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Disclaimer</Link>
-        </nav>
+    <footer className="mt-auto border-t border-slate-200/80 bg-white/75">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3"><BrandLockup markClassName="size-9" wordmarkClassName="text-lg" /><span className="hidden h-5 w-px bg-slate-200 md:block" /><p className="text-xs leading-5 text-slate-500 sm:text-sm">Motor insurance workflows, made clearer.</p></div>
+        <div className="flex flex-col gap-2 text-xs text-slate-500 sm:items-end"><nav aria-label="Legal information" className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/terms" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Terms</Link><Link href="/privacy" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Privacy</Link><Link href="/disclaimer" className="rounded underline-offset-4 hover:text-[var(--brand-navy)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Disclaimer</Link></nav><p>© {new Date().getFullYear()} InsureFlow. Portfolio demonstration.</p></div>
       </div>
     </footer>
   );

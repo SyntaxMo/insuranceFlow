@@ -184,7 +184,7 @@ export function SignupForm() {
       ) : null}
       <SubmitButton
         pending={pending}
-        label="Create customer account"
+        label="Create account"
         pendingLabel="Creating account..."
       />
       <p className="text-center text-sm text-slate-600">

@@ -1,0 +1,253 @@
+.story {
+  position: relative;
+  isolation: isolate;
+}
+
+.storyGrid {
+  display: grid;
+  grid-template-areas:
+    "hero"
+    "visual"
+    "coverage";
+}
+
+.heroStage {
+  grid-area: hero;
+}
+
+.coverageStage {
+  grid-area: coverage;
+}
+
+.visualColumn {
+  grid-area: visual;
+}
+
+.heroCopy > * {
+  opacity: 0;
+  animation: hero-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.heroCopy > :nth-child(2) { animation-delay: 70ms; }
+.heroCopy > :nth-child(3) { animation-delay: 130ms; }
+.heroCopy > :nth-child(4) { animation-delay: 190ms; }
+.heroCopy > :nth-child(5) { animation-delay: 250ms; }
+.heroCopy > :nth-child(6) { animation-delay: 310ms; }
+
+.heroCopy {
+  transition: opacity 420ms ease, transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.storyGrid[data-coverage="true"] .heroCopy {
+  opacity: 0;
+  transform: translateY(-1.25rem);
+}
+
+.visualInner {
+  opacity: 0;
+  animation: visual-in 600ms 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.car {
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.visualColumn[data-coverage="true"] .car {
+  transform: translate3d(0, -1.25rem, 0) scale(1.035);
+}
+
+.marker {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 380ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.visualColumn[data-coverage="true"] .marker {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.visualColumn[data-coverage="true"] .marker:nth-of-type(2) { transition-delay: 55ms; }
+.visualColumn[data-coverage="true"] .marker:nth-of-type(3) { transition-delay: 110ms; }
+.visualColumn[data-coverage="true"] .marker:nth-of-type(4) { transition-delay: 165ms; }
+
+.activeRing {
+  animation: marker-pulse 1.8s ease-out infinite;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 30;
+  width: min(15rem, calc(100vw - 2rem));
+  border: 1px solid rgba(153, 230, 218, 0.75);
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.75rem 0.875rem;
+  box-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.45);
+  pointer-events: none;
+  animation: tooltip-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.compareTooltip {
+  width: min(20rem, calc(100vw - 2rem));
+}
+
+.compareGrid {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
+
+.liabilityNote {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: 8%;
+  width: min(21rem, calc(100vw - 2.5rem));
+  transform: translateX(-50%);
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 0.75rem 0.875rem;
+  box-shadow: 0 16px 40px -28px rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(8px);
+  animation: tooltip-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.below {
+  transform-origin: top center;
+  transform: translate(-50%, 1.25rem);
+}
+
+.upper-center {
+  transform-origin: bottom center;
+  transform: translate(-50%, calc(-100% - 1.25rem));
+}
+
+.upper-left {
+  transform-origin: bottom left;
+  transform: translate(-1.5rem, calc(-100% - 1.25rem));
+}
+
+.upper-right {
+  transform-origin: bottom right;
+  transform: translate(calc(-100% + 1.5rem), calc(-100% - 1.25rem));
+}
+
+.touchHelper {
+  display: none;
+}
+
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes visual-in {
+  from { opacity: 0; transform: translate3d(18px, 8px, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes marker-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.28); }
+  55% { box-shadow: 0 0 0 7px rgba(13, 148, 136, 0); }
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; scale: 0.96; }
+  to { opacity: 1; scale: 1; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .pointerHelper {
+    display: none;
+  }
+
+  .touchHelper {
+    display: inline;
+  }
+}
+
+@media (min-width: 640px) {
+  .compareGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .tooltip,
+  .compareTooltip {
+    width: min(17rem, calc(100vw - 3rem));
+  }
+}
+
+@media (max-width: 1023px) {
+  .storyGrid[data-coverage="true"] .heroCopy {
+    opacity: 1;
+    transform: none;
+  }
+
+  .marker {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .visualColumn[data-coverage="true"] .car {
+    transform: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .storyGrid {
+    grid-template-areas:
+      "hero visual"
+      "coverage visual";
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .heroStage,
+  .coverageStage {
+    min-height: calc(100svh - 4rem);
+  }
+
+  .visualColumn {
+    align-self: stretch;
+  }
+
+  .visualInner {
+    position: sticky;
+    top: 4rem;
+    min-height: calc(100svh - 4rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storyGrid[data-coverage="true"] .heroCopy {
+    opacity: 1;
+    transform: none;
+  }
+
+  .heroCopy > *,
+  .visualInner {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .car,
+  .heroCopy,
+  .marker {
+    transition: none;
+  }
+
+  .activeRing {
+    animation: none;
+  }
+
+  .tooltip {
+    animation: none;
+  }
+
+  .liabilityNote {
+    animation: none;
+  }
+}

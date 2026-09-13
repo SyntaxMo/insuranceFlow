@@ -60,7 +60,7 @@ describe("SignupForm", () => {
       target: { value: "different1" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Create customer account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(screen.getByText("Passwords do not match.")).toBeTruthy();
     expect(signupActionMock).not.toHaveBeenCalled();
@@ -79,11 +79,11 @@ describe("SignupForm", () => {
     fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "different1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create customer account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "password1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create customer account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     await waitFor(() => expect(signupActionMock).toHaveBeenCalledTimes(1));
   });
@@ -111,7 +111,7 @@ describe("SignupForm", () => {
       target: { value: confirmation },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Create customer account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(screen.getByText(error)).toBeTruthy();
     expect(signupActionMock).not.toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe("SignupForm", () => {
     );
     render(<SignupForm />);
     fillValidForm();
-    const button = screen.getByRole("button", { name: "Create customer account" });
+    const button = screen.getByRole("button", { name: "Create account" });
 
     fireEvent.click(button);
     fireEvent.click(button);
@@ -142,7 +142,7 @@ describe("SignupForm", () => {
     render(<SignupForm />);
     fillValidForm();
 
-    fireEvent.click(screen.getByRole("button", { name: "Create customer account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(await screen.findByText("Too many signup attempts. Please wait before trying again.")).toBeTruthy();
     expect(signupActionMock).toHaveBeenCalledTimes(1);

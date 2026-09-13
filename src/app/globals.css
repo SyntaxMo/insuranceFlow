@@ -9,6 +9,8 @@
   --brand-teal-deep: #0b5f59;
   --brand-teal-soft: #e6f4f2;
   --brand-mist: #dbe7f3;
+  --font-body: var(--font-inter);
+  --font-display: var(--font-inter);
 }
 
 @theme inline {
@@ -18,14 +20,24 @@
   --font-display: var(--font-display);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background:
     radial-gradient(1200px 500px at 10% -10%, #d9e8f5 0%, transparent 55%),
     radial-gradient(900px 420px at 90% 0%, #d7efe9 0%, transparent 50%),
     linear-gradient(180deg, #f7fafc 0%, #eef3f7 100%);
   color: var(--foreground);
-  font-family: var(--font-body), "Segoe UI", sans-serif;
+  font-family: var(--font-body), "Helvetica Neue", Helvetica, Arial, sans-serif;
   min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 @layer base {
