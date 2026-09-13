@@ -10,7 +10,7 @@ import {
   validateFile,
   type AccidentFormInput,
 } from "@/lib/validation/claim";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCoverageType, formatCurrency, formatDate } from "@/lib/format";
 import {
   Alert,
   Button,
@@ -76,7 +76,7 @@ function PolicySummary({ policy }: { policy: VerifiedPolicySummary }) {
         <dt className="text-xs uppercase tracking-wide text-slate-500">
           Coverage type
         </dt>
-        <dd className="font-medium text-slate-900">{policy.coverageType}</dd>
+        <dd className="font-medium text-slate-900">{formatCoverageType(policy.coverageType)}</dd>
       </div>
       <div>
         <dt className="text-xs uppercase tracking-wide text-slate-500">

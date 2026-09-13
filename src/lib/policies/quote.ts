@@ -1,3 +1,5 @@
+import { formatCoverageType } from "@/lib/format";
+
 export const COVERAGE_OPTIONS = ["COMPREHENSIVE", "THIRD_PARTY"] as const;
 export type DemoCoverage = (typeof COVERAGE_OPTIONS)[number];
 
@@ -37,23 +39,23 @@ export function calculateDemoQuote({
     const multiplier = vehicleAge <= 2 ? 1 : vehicleAge <= 5 ? 1.08 : vehicleAge <= 9 ? 1.15 : 1.25;
     return {
       coverage,
-      coverageLabel: "Comprehensive",
+      coverageLabel: formatCoverageType(coverage),
       annualPremium: roundBhd(clamp(estimatedVehicleValue * 0.018 * multiplier, 120, 600)),
       excess: 150,
       coverageLimit: roundBhd(estimatedVehicleValue),
       vehicleAge,
-      adjustmentLabel: `${multiplier.toFixed(2)}× vehicle-age multiplier`,
+      adjustmentLabel: `${multiplier.toFixed(2)}×`,
     };
   }
 
   const ageAddition = vehicleAge <= 5 ? 0 : vehicleAge <= 9 ? 10 : 20;
   return {
     coverage,
-    coverageLabel: "Third Party",
+    coverageLabel: formatCoverageType(coverage),
     annualPremium: roundBhd(Math.min(120, 75 + ageAddition)),
     excess: 0,
     coverageLimit: 100_000,
     vehicleAge,
-    adjustmentLabel: ageAddition === 0 ? "No vehicle-age addition" : `BHD ${ageAddition} vehicle-age addition`,
+    adjustmentLabel: ageAddition === 0 ? "No age adjustment" : `BHD ${ageAddition} age adjustment`,
   };
 }

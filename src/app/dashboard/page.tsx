@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
 import { getCustomerDashboard } from "@/lib/claims/customer";
-import { formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
+import { formatCoverageType, formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
 import { requireCustomer } from "@/lib/auth/session";
 import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
 
@@ -55,7 +55,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
       id: `policy-${policy.id}`,
       date: policy.start_date,
       title: `Policy ${policy.policy_number} coverage started`,
-      detail: policy.coverage_type,
+      detail: formatCoverageType(policy.coverage_type),
     })),
   ]
     .filter((activity) => !Number.isNaN(new Date(activity.date).getTime()))
@@ -142,7 +142,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
                     </div>
                   </div>
                   <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-slate-100 py-5 text-sm">
-                    <div><dt className="text-xs text-slate-500">Coverage</dt><dd className="mt-1 font-medium text-slate-800">{policy.coverage_type}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Coverage</dt><dd className="mt-1 font-medium text-slate-800">{formatCoverageType(policy.coverage_type)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Policy period</dt><dd className="mt-1 font-medium text-slate-800">{formatDate(policy.start_date)} – {formatDate(policy.end_date)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Excess</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(policy.excess_amount)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Coverage limit</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(policy.coverage_limit)}</dd></div>

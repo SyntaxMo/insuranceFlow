@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, statusLabel, statusTone } from "@/lib/format";
+import { formatCoverageType, formatCurrency, statusLabel, statusTone } from "@/lib/format";
 
 describe("Bahraini dinar formatting", () => {
   it.each([
@@ -9,6 +9,17 @@ describe("Bahraini dinar formatting", () => {
     [12.345, "BHD 12.345"],
   ])("formats %s as %s", (amount, expected) => {
     expect(formatCurrency(amount)).toBe(expected);
+  });
+});
+
+describe("customer-facing coverage labels", () => {
+  it.each([
+    ["COMPREHENSIVE", "Comprehensive"],
+    ["Comprehensive", "Comprehensive"],
+    ["THIRD_PARTY", "Third Party"],
+    ["Third Party", "Third Party"],
+  ])("formats %s as %s", (coverage, expected) => {
+    expect(formatCoverageType(coverage)).toBe(expected);
   });
 });
 

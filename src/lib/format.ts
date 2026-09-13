@@ -43,6 +43,22 @@ export function statusTone(status: string): string {
   return "bg-slate-50 text-slate-700 ring-slate-200";
 }
 
+const COVERAGE_LABELS: Record<string, string> = {
+  COMPREHENSIVE: "Comprehensive",
+  THIRD_PARTY: "Third Party",
+};
+
+export function formatCoverageType(value: string): string {
+  const normalized = value.trim().replace(/[\s-]+/g, "_").toUpperCase();
+  return (
+    COVERAGE_LABELS[normalized] ||
+    normalized
+      .toLowerCase()
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Submitted",
   UNDER_REVIEW: "Under review",

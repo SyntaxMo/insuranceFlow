@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
 import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
 import { getCustomerPolicyDetails } from "@/lib/claims/customer";
-import { formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
+import { formatCoverageType, formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
 import { requireCustomer } from "@/lib/auth/session";
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
@@ -52,7 +52,7 @@ export default async function CustomerPolicyPage({
             <h1 className="mt-2 max-w-3xl font-[family-name:var(--font-display)] text-3xl leading-tight sm:text-4xl">
               {vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : "Motor policy"}
             </h1>
-            <p className="mt-2 text-sm text-slate-300">{policy.coverage_type} motor insurance</p>
+            <p className="mt-2 text-sm text-slate-300">{formatCoverageType(policy.coverage_type)} motor insurance</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 self-start">
             <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(policy.status)}`}>
@@ -72,7 +72,7 @@ export default async function CustomerPolicyPage({
             <h2 id="policy-information-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Policy information</h2>
             <dl className="mt-6 grid gap-5 sm:grid-cols-2">
               <Detail label="Policy number">{policy.policy_number}</Detail>
-              <Detail label="Coverage">{policy.coverage_type}</Detail>
+              <Detail label="Coverage">{formatCoverageType(policy.coverage_type)}</Detail>
               <Detail label="Status">{statusLabel(policy.status)}</Detail>
               <Detail label="Policy period">{formatDate(policy.start_date)} – {formatDate(policy.end_date)}</Detail>
             </dl>
@@ -103,7 +103,7 @@ export default async function CustomerPolicyPage({
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Policy limits</p>
           <h2 id="coverage-financials-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Coverage & financials</h2>
           <dl className={`mt-6 grid gap-5 sm:items-start ${policy.annual_premium == null ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
-            <Detail label="Coverage type">{policy.coverage_type}</Detail>
+            <Detail label="Coverage type">{formatCoverageType(policy.coverage_type)}</Detail>
             <Detail label="Excess">{formatCurrency(policy.excess_amount)}</Detail>
             <Detail label="Coverage limit">{formatCurrency(policy.coverage_limit)}</Detail>
             {policy.annual_premium != null ? <Detail label="Annual premium">{formatCurrency(policy.annual_premium)}</Detail> : null}

@@ -9,7 +9,7 @@ import {
   type SendPolicyCodeState,
   type VerifyPolicyCodeState,
 } from "@/app/dashboard/policies/link/actions";
-import { statusLabel, statusTone } from "@/lib/format";
+import { formatCoverageType, statusLabel, statusTone } from "@/lib/format";
 import { Alert, Button, Card, Field, TextInput } from "@/components/ui/Forms";
 
 const initialState: PolicyLookupState = {};
@@ -202,7 +202,7 @@ export function LinkPolicyForm() {
                 <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
                   {state.match.vehicle.make} {state.match.vehicle.model} {state.match.vehicle.year}
                 </h2>
-                <p className="mt-1 text-slate-600">{state.match.coverageType}</p>
+                <p className="mt-1 text-slate-600">{formatCoverageType(state.match.coverageType)}</p>
                 <p className="mt-3 text-sm font-medium text-slate-700">Policy {state.match.maskedPolicyNumber}</p>
               </div>
               <span className={`self-start rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(state.match.status)}`}>
