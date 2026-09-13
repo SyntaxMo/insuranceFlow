@@ -102,10 +102,11 @@ export default async function CustomerPolicyPage({
         <Card>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Policy limits</p>
           <h2 id="coverage-financials-heading" className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Coverage & financials</h2>
-          <dl className="mt-6 grid gap-5 sm:grid-cols-3 sm:items-start">
+          <dl className={`mt-6 grid gap-5 sm:items-start ${policy.annual_premium == null ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
             <Detail label="Coverage type">{policy.coverage_type}</Detail>
             <Detail label="Excess">{formatCurrency(policy.excess_amount)}</Detail>
             <Detail label="Coverage limit">{formatCurrency(policy.coverage_limit)}</Detail>
+            {policy.annual_premium != null ? <Detail label="Annual premium">{formatCurrency(policy.annual_premium)}</Detail> : null}
           </dl>
         </Card>
       </section>

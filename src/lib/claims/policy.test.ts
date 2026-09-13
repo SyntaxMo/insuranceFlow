@@ -28,7 +28,7 @@ const activePolicy = {
     make: "Toyota",
     model: "Camry",
     year: 2024,
-    plate_number: "ABC123",
+      plate_number: "123456",
   },
 };
 

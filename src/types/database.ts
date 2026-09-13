@@ -46,6 +46,8 @@ export interface Policy {
   coverage_type: string;
   excess_amount: number;
   coverage_limit: number;
+  annual_premium?: number | null;
+  purchase_request_id?: string | null;
   created_at?: string;
   vehicles?: Vehicle | Vehicle[] | null;
 }

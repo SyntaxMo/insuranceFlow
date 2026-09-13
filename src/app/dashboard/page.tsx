@@ -43,7 +43,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
   const { policies, claims, error } = await getCustomerDashboard(profile.id);
   const actionRequired = claims.filter((claim) => claim.status.toUpperCase() === "MORE_INFO_REQUIRED");
   const activePolicies = policies.filter((policy) => policy.status.toUpperCase() === "ACTIVE").length;
-  const openClaims = claims.filter((claim) => !["APPROVED", "REJECTED", "CLOSED"].includes(claim.status.toUpperCase())).length;
+  const openClaims = claims.filter((claim) => !["REJECTED", "CLOSED"].includes(claim.status.toUpperCase())).length;
   const activities = [
     ...claims.map((claim) => ({
       id: `claim-${claim.id}`,

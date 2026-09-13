@@ -1,16 +1,20 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
-import { buttonClassName, Card } from "@/components/ui/Forms";
+import { PolicyPurchaseWizard } from "@/components/dashboard/PolicyPurchaseWizard";
+import { buttonClassName } from "@/components/ui/Forms";
+import { requireCustomer } from "@/lib/auth/session";
 
-export default function NewPolicyPlaceholderPage() {
+export default async function NewPolicyPage() {
+  const customer = await requireCustomer();
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
-      <Card className="text-center">
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <Link href="/dashboard" className={buttonClassName("secondary")}>← Back to dashboard</Link>
+      <header className="mx-auto mb-7 mt-6 max-w-4xl">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Motor insurance</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Get a motor policy</h1>
-        <p className="mx-auto mt-3 max-w-lg text-slate-600">Get a quote and insure another vehicle through InsureFlow.</p>
-        <div className="mx-auto mt-6 max-w-lg rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">Online quotes and policy purchase are coming next.</div>
-        <Link href="/dashboard" className={buttonClassName("secondary", "mt-6")}>Back to dashboard</Link>
-      </Card>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)] sm:text-4xl">Get a motor policy</h1>
+        <p className="mt-2 max-w-2xl text-slate-600">Build a deterministic demonstration quote, review it, and issue a simulated policy to your account.</p>
+      </header>
+      <PolicyPurchaseWizard customer={{ fullName: customer.full_name, email: customer.email }} requestId={randomUUID()} />
     </main>
   );
 }

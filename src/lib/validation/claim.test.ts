@@ -27,7 +27,7 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
       make: "Toyota",
       model: "Corolla",
       year: 2022,
-      plate_number: "ABC-1234",
+      plate_number: "123456",
     },
     ...overrides,
   };

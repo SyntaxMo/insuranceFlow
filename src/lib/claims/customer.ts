@@ -21,6 +21,7 @@ export type CustomerPolicy = Pick<
   | "excess_amount"
   | "coverage_limit"
 > & {
+  annual_premium?: number | null;
   accessType: CustomerPolicyAccess;
   vehicles?: CustomerVehicle | CustomerVehicle[] | null;
 };
@@ -55,9 +56,7 @@ export async function getCustomerDashboard(userId: string): Promise<{
 
   const { data: directPolicies, error: directPolicyError } = await supabase
     .from("policies")
-    .select(`id, policy_number, status, coverage_type, start_date, end_date,
-      excess_amount, coverage_limit,
-      vehicles (make, model, year, plate_number, vin)`)
+    .select(`*, vehicles (make, model, year, plate_number, vin)`)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -71,9 +70,7 @@ export async function getCustomerDashboard(userId: string): Promise<{
   if (linkedPolicyIds.length > 0) {
     const { data, error } = await supabase
       .from("policies")
-      .select(`id, policy_number, status, coverage_type, start_date, end_date,
-        excess_amount, coverage_limit,
-        vehicles (make, model, year, plate_number, vin)`)
+      .select(`*, vehicles (make, model, year, plate_number, vin)`)
       .in("id", linkedPolicyIds)
       .order("created_at", { ascending: false });
     if (error) {
@@ -132,9 +129,7 @@ export async function getCustomerPolicyDetails(
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("policies")
-    .select(`id, user_id, policy_number, status, coverage_type, start_date, end_date,
-      excess_amount, coverage_limit,
-      vehicles (make, model, year, plate_number, vin)`)
+    .select(`*, vehicles (make, model, year, plate_number, vin)`)
     .eq("id", policyId)
     .maybeSingle();
 

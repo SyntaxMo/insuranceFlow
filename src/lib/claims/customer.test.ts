@@ -139,7 +139,7 @@ describe("getCustomerPolicyDetails", () => {
       make: "Toyota",
       model: "RAV4",
       year: 2023,
-      plate_number: "BH-45821",
+      plate_number: "45821",
       vin: "REAL-VIN-123",
     },
   };
