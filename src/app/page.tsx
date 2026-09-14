@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HelpFaq } from "@/components/marketing/HelpFaq";
 import { HeroCoverageStory } from "@/components/marketing/HeroCoverageStory";
 import { Reveal } from "@/components/marketing/Reveal";
 import { buttonClassName } from "@/components/ui/Forms";
@@ -71,7 +72,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="insurance" className="scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <section id="claims" className="scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <Reveal direction="left"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-teal)]">Everything in one place</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-[var(--brand-navy)] sm:text-4xl">Policies and claims, connected.</h2><p className="mt-4 text-base leading-7 text-slate-600">Use one customer portal to access the workflows already built into InsureFlow.</p><ul className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{features.map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-medium text-slate-700"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[var(--brand-teal)]"><CheckIcon /></span>{feature}</li>)}</ul></Reveal>
           <Reveal direction="right" delay={100}>
@@ -83,15 +84,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="claims" className="scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <section id="ai" className="scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <Reveal className="mx-auto grid w-full max-w-7xl items-center gap-10 rounded-[2rem] bg-[var(--brand-navy)] px-5 py-10 text-white shadow-[0_30px_80px_-50px_rgba(5,42,66,0.85)] sm:px-10 sm:py-14 lg:grid-cols-2 lg:px-14">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-300">Human in the loop</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] sm:text-4xl">AI-assisted claims, human decisions.</h2><p className="mt-4 max-w-xl leading-7 text-slate-300">AI helps claims staff organize supplied information and documents. It supports review; it never approves or rejects a claim.</p></div>
           <div className="grid gap-3 sm:grid-cols-2">{["Summarize documents", "Identify missing information", "Flag inconsistencies", "Highlight review risks"].map((item, index) => <Reveal key={item} delay={80 + index * 65}><div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><span className="flex size-8 items-center justify-center rounded-full bg-teal-400/15 text-teal-200"><CheckIcon /></span><p className="mt-4 text-sm font-semibold text-white">{item}</p></div></Reveal>)}</div>
         </Reveal>
       </section>
 
-      <section className="px-4 pb-20 pt-4 sm:px-6 sm:pb-24 lg:px-8">
-        <Reveal direction="scale" className="mx-auto max-w-5xl rounded-[2rem] border border-teal-100 bg-[linear-gradient(135deg,#eaf8f5_0%,#f7fbfc_60%,#eaf2f8_100%)] px-5 py-10 text-center sm:px-10 sm:py-14"><Image src="/brand/insureflow-mark.webp" alt="" width={56} height={56} className="mx-auto size-14 object-contain" /><h2 className="mt-5 text-3xl font-bold tracking-[-0.035em] text-[var(--brand-navy)] sm:text-4xl">Ready to explore InsureFlow?</h2><p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600">Create a demo account and experience connected digital policy and claim workflows.</p><div className="mt-7 flex flex-col justify-center gap-3 min-[430px]:flex-row"><Link href="/signup" className={buttonClassName("primary", "px-6 py-3.5 text-base")}>Create account</Link><Link href="/login" className={buttonClassName("secondary", "bg-white/80 px-6 py-3.5 text-base")}>Sign in</Link></div></Reveal>
+      <section id="help" className="scroll-mt-24 bg-white px-4 pb-20 pt-20 sm:px-6 sm:pb-24 sm:pt-24 lg:px-8">
+        <Reveal><HelpFaq /></Reveal>
+
+        <div className="mx-auto mt-16 w-full max-w-5xl border-t border-slate-200/80 pt-16 sm:mt-20 sm:pt-20">
+          <Reveal direction="scale" className="text-center">
+            <Image src="/brand/insureflow-mark.webp" alt="" width={44} height={44} className="mx-auto size-11 object-contain opacity-90" />
+            <h2 className="mt-5 text-3xl font-bold tracking-[-0.035em] text-[var(--brand-navy)] sm:text-4xl">Ready to explore InsureFlow?</h2>
+            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600">Create a demo account and experience connected digital policy and claim workflows.</p>
+            <div className="mt-7 flex flex-col justify-center gap-3 min-[430px]:flex-row">
+              <Link href="/signup" className={buttonClassName("primary", "px-6 py-3.5 text-base")}>Create account</Link>
+              <Link href="/login" className={buttonClassName("secondary", "bg-white px-6 py-3.5 text-base")}>Sign in</Link>
+            </div>
+          </Reveal>
+        </div>
       </section>
     </div>
   );

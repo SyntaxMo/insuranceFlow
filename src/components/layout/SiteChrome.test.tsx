@@ -22,9 +22,12 @@ describe("shared branded chrome", () => {
     render(await SiteHeader());
     expect(screen.getByRole("link", { name: "InsureFlow home" }).getAttribute("href")).toBe("/");
     expect(screen.getByTestId("insureflow-logo").getAttribute("src")).toContain("insureflow-mark.webp");
-    expect(screen.getByRole("link", { name: "Insurance" }).getAttribute("href")).toBe("/#insurance");
-    expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/#claims");
+    expect(screen.getByRole("link", { name: "Insurance" }).getAttribute("href")).toBe("/#coverage");
     expect(screen.getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("/#how-it-works");
+    expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/#claims");
+    expect(screen.getByRole("link", { name: "AI" }).getAttribute("href")).toBe("/#ai");
+    expect(screen.getByRole("link", { name: "Help" }).getAttribute("href")).toBe("/#help");
+    expect(screen.getAllByRole("link").filter((link) => ["Insurance", "How it works", "Claims", "AI", "Help"].includes(link.textContent ?? "")).map((link) => link.textContent)).toEqual(["Insurance", "How it works", "Claims", "AI", "Help"]);
     expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
     expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe("/signup");
     expect(screen.queryByRole("link", { name: "Dashboard" })).toBeNull();

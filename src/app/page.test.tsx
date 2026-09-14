@@ -17,9 +17,12 @@ describe("premium public landing page", () => {
     expect(screen.getAllByRole("link", { name: "Create account" })[0].getAttribute("href")).toBe("/signup");
     expect(screen.getByRole("link", { name: "Explore how it works" }).getAttribute("href")).toBe("#how-it-works");
     expect(document.getElementById("how-it-works")).toBeTruthy();
-    expect(document.getElementById("insurance")).toBeTruthy();
     expect(document.getElementById("claims")).toBeTruthy();
+    expect(document.getElementById("ai")).toBeTruthy();
+    expect(document.getElementById("help")).toBeTruthy();
     expect(document.getElementById("coverage")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Need help?" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View FAQs" }).getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByRole("heading", { name: "A simpler side-by-side view." })).toBeTruthy();
     expect(screen.getByText("BHD 100,000")).toBeTruthy();
   });
