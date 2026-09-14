@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { getDemoPolicyQuote, issueDemoPolicy, type IssuePolicyState } from "@/app/dashboard/policies/new/actions";
+import { CoverageAssistant } from "@/components/dashboard/CoverageAssistant";
 import { Alert, Button, Card, Field, TextInput, buttonClassName } from "@/components/ui/Forms";
 import { formatCoverageType, formatCurrency, formatDate } from "@/lib/format";
 import type { DemoCoverage, DemoQuote } from "@/lib/policies/quote";
@@ -171,6 +172,20 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
               </button>
             ))}
           </div>
+          <CoverageAssistant
+            vehicle={{
+              make: values.make,
+              model: values.model,
+              year: Number(values.year),
+              estimatedValue: Number(values.estimatedVehicleValue),
+            }}
+            selectedCoverage={coverage}
+            onAccept={(recommendedCoverage) => {
+              setCoverage(recommendedCoverage);
+              setMessage(null);
+              setConsentAccepted(false);
+            }}
+          />
           {!coverage ? <p className="mt-3 text-sm text-rose-600">Choose a coverage option to continue.</p> : null}
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(1)}>Back</Button><Button type="button" className="w-full sm:w-auto" disabled={!coverage || quoting} onClick={requestQuote}>{quoting ? "Preparing quote..." : "See your quote"}</Button></div>
         </section>

@@ -66,6 +66,7 @@ describe("PolicyPurchaseWizard presentation", () => {
 
   it("communicates coverage selection with text and aria state", async () => {
     const user = await reachCoverageStep();
+    expect(screen.getByRole("button", { name: "Help me choose" })).toBeTruthy();
     const option = screen.getByRole("button", { name: "Comprehensive coverage" });
 
     expect(option.getAttribute("aria-pressed")).toBe("false");
