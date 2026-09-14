@@ -36,6 +36,13 @@ async function reachReviewStep() {
   return user;
 }
 
+async function reachPaymentStep() {
+  const user = await reachReviewStep();
+  await user.click(screen.getByRole("checkbox"));
+  await user.click(screen.getByRole("button", { name: "Continue to payment" }));
+  return user;
+}
+
 describe("PolicyPurchaseWizard presentation", () => {
   afterEach(cleanup);
 
@@ -105,5 +112,28 @@ describe("PolicyPurchaseWizard presentation", () => {
 
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("shows a policy download action on Step 6 only when a document exists", async () => {
+    const user = await reachPaymentStep();
+    issueDemoPolicyMock.mockResolvedValueOnce({
+      status: "success",
+      policy: {
+        id: "8f000000-0000-4000-8000-000000000002",
+        policyNumber: "MOT-2026-D95F565D",
+        startDate: "2026-09-13",
+        endDate: "2027-09-12",
+        annualPremium: 171,
+        excess: 150,
+        coverageLabel: "COMPREHENSIVE",
+        documentAvailable: true,
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "Complete simulated payment" }));
+
+    expect(await screen.findByRole("heading", { name: "You're covered" })).toBeTruthy();
+    const download = screen.getByRole("link", { name: "Download policy MOT-2026-D95F565D" });
+    expect(download.getAttribute("href")).toBe("/dashboard/policies/8f000000-0000-4000-8000-000000000002/document");
   });
 });

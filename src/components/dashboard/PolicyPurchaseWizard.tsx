@@ -111,6 +111,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-teal)]">Policy issued</p>
         <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)] sm:text-4xl">You&apos;re covered</h2>
         <p className="mt-2 text-slate-600">Your motor policy has been issued successfully.</p>
+        {issueState.deliveryWarning ? <div className="mx-auto mt-5 max-w-xl text-left"><Alert tone="info">{issueState.deliveryWarning}</Alert></div> : null}
         <dl className="mx-auto mt-7 max-w-xl rounded-2xl bg-slate-50 px-4 py-2 text-left ring-1 ring-slate-200 sm:px-5">
           <SummaryRow label="Policy number" value={<strong className="text-[var(--brand-navy)]">{issueState.policy.policyNumber}</strong>} />
           <SummaryRow label="Vehicle" value={`${values.make} ${values.model} (${values.year})`} />
@@ -121,6 +122,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
         </dl>
         <div className="mt-7 flex flex-col-reverse justify-center gap-3 sm:flex-row">
           <Link href="/dashboard" className={buttonClassName("secondary", "w-full sm:w-auto")}>Back to dashboard</Link>
+          {issueState.policy.documentAvailable ? <a href={`/dashboard/policies/${issueState.policy.id}/document`} className={buttonClassName("secondary", "w-full sm:w-auto")} aria-label={`Download policy ${issueState.policy.policyNumber}`}>Download policy</a> : null}
           <Link href={`/dashboard/policies/${issueState.policy.id}`} className={buttonClassName("primary", "w-full sm:w-auto")}>View policy</Link>
         </div>
         </div>

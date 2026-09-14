@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth/session";
 import { calculateDemoQuote, type DemoQuote } from "@/lib/policies/quote";
 import { flattenPurchaseErrors, policyPurchaseSchema, quoteRequestSchema } from "@/lib/policies/purchase";
+import { deliverIssuedPolicyDocument, POLICY_DOCUMENT_DELIVERY_WARNING, type PolicyDeliveryResult } from "@/lib/policies/policy-document-delivery";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 export type QuoteActionResult =
@@ -13,6 +14,7 @@ export type QuoteActionResult =
 export type IssuePolicyState = {
   status: "idle" | "error" | "success";
   message?: string;
+  deliveryWarning?: string;
   fieldErrors?: Record<string, string>;
   policy?: {
     id: string;
@@ -22,6 +24,7 @@ export type IssuePolicyState = {
     annualPremium: number;
     excess: number;
     coverageLabel: string;
+    documentAvailable: boolean;
   };
 };
 
@@ -123,10 +126,28 @@ export async function issueDemoPolicy(
     return { status: "error", message: "We couldn't issue the policy right now. No payment was processed." };
   }
 
+  let delivery: PolicyDeliveryResult = {
+    documentAvailable: false,
+    emailSent: false,
+    warning: POLICY_DOCUMENT_DELIVERY_WARNING,
+  };
+  try {
+    delivery = await deliverIssuedPolicyDocument({
+      customer,
+      policyId: String(result.issued_policy_id),
+    });
+  } catch (deliveryError) {
+    console.error("Post-issuance policy delivery failed:", {
+      policyId: String(result.issued_policy_id),
+      errorType: deliveryError instanceof Error ? deliveryError.name : "UnknownError",
+    });
+  }
+
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/policies/${result.issued_policy_id}`);
   return {
     status: "success",
+    deliveryWarning: delivery.warning,
     policy: {
       id: String(result.issued_policy_id),
       policyNumber: String(result.issued_policy_number),
@@ -135,6 +156,7 @@ export async function issueDemoPolicy(
       annualPremium: quote.annualPremium,
       excess: quote.excess,
       coverageLabel: quote.coverageLabel,
+      documentAvailable: delivery.documentAvailable,
     },
   };
 }

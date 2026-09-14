@@ -1,14 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireCustomerMock, createServiceRoleClientMock, revalidatePathMock } = vi.hoisted(() => ({
+const { requireCustomerMock, createServiceRoleClientMock, revalidatePathMock, deliverIssuedPolicyDocumentMock } = vi.hoisted(() => ({
   requireCustomerMock: vi.fn(),
   createServiceRoleClientMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  deliverIssuedPolicyDocumentMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/session", () => ({ requireCustomer: requireCustomerMock }));
 vi.mock("@/lib/supabase/server", () => ({ createServiceRoleClient: createServiceRoleClientMock }));
+vi.mock("@/lib/policies/policy-document-delivery", () => ({
+  deliverIssuedPolicyDocument: deliverIssuedPolicyDocumentMock,
+  POLICY_DOCUMENT_DELIVERY_WARNING: "Your policy was issued successfully, but document delivery is unavailable.",
+}));
 vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 
 import { getDemoPolicyQuote, issueDemoPolicy } from "@/app/dashboard/policies/new/actions";
@@ -30,9 +35,12 @@ function validForm() {
 }
 
 describe("demo policy actions", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   beforeEach(() => {
     vi.clearAllMocks();
-    requireCustomerMock.mockResolvedValue({ id: "portal-user", full_name: "Customer", email: "customer@example.com" });
+    requireCustomerMock.mockResolvedValue({ id: "portal-user", full_name: "Customer", email: "customer@example.com", phone: "+973 1234 5678" });
+    deliverIssuedPolicyDocumentMock.mockResolvedValue({ documentAvailable: true, emailSent: true });
   });
 
   it("creates a quote only after authenticating the customer", async () => {
@@ -55,6 +63,8 @@ describe("demo policy actions", () => {
     expect(rpc).toHaveBeenCalledWith("issue_demo_motor_policy", expect.objectContaining({ p_portal_user_id: "portal-user", p_plate_number: "927410", p_vin: "", p_annual_premium: 171, p_excess_amount: 150, p_coverage_limit: 9500 }));
     expect(rpc.mock.calls[0][1]).not.toHaveProperty("p_status");
     expect(revalidatePathMock).toHaveBeenCalledWith("/dashboard");
+    expect(deliverIssuedPolicyDocumentMock).toHaveBeenCalledWith({ customer: expect.objectContaining({ id: "portal-user" }), policyId: "policy-id" });
+    expect(result).toMatchObject({ status: "success", policy: { documentAvailable: true } });
   });
 
   it("maps duplicate vehicle results without exposing database errors", async () => {
@@ -99,6 +109,18 @@ describe("demo policy actions", () => {
     createServiceRoleClientMock.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: [{ outcome: "already_issued", issued_policy_id: "same-policy", issued_vehicle_id: "same-vehicle", issued_policy_number: "MOT-2026-SAME0001", issued_start_date: "2026-09-13", issued_end_date: "2027-09-12" }], error: null }) });
     const result = await issueDemoPolicy({ status: "idle" }, validForm());
     expect(result).toMatchObject({ status: "success", policy: { id: "same-policy", policyNumber: "MOT-2026-SAME0001" } });
+    expect(deliverIssuedPolicyDocumentMock).toHaveBeenCalledWith({ customer: expect.anything(), policyId: "same-policy" });
+  });
+
+  it("keeps an issued policy successful when post-issuance delivery fails", async () => {
+    createServiceRoleClientMock.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: [{ outcome: "issued", issued_policy_id: "policy-id", issued_vehicle_id: "vehicle-id", issued_policy_number: "MOT-2026-DOCFAIL1", issued_start_date: "2026-09-13", issued_end_date: "2027-09-12" }], error: null }) });
+    deliverIssuedPolicyDocumentMock.mockRejectedValue(new Error("delivery unavailable"));
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await issueDemoPolicy({ status: "idle" }, validForm());
+
+    expect(result).toMatchObject({ status: "success", policy: { id: "policy-id", documentAvailable: false } });
+    expect(result.deliveryWarning).toMatch(/issued successfully/i);
   });
 
   it("does not touch the database if authentication fails", async () => {

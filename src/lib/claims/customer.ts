@@ -20,6 +20,7 @@ export type CustomerPolicy = Pick<
   | "end_date"
   | "excess_amount"
   | "coverage_limit"
+  | "purchase_request_id"
 > & {
   annual_premium?: number | null;
   accessType: CustomerPolicyAccess;

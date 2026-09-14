@@ -5,6 +5,7 @@ import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
 import { getCustomerPolicyDetails } from "@/lib/claims/customer";
 import { formatCoverageType, formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
 import { requireCustomer } from "@/lib/auth/session";
+import { getPolicyDocumentMetadata } from "@/lib/policies/policy-document-delivery";
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -35,6 +36,7 @@ export default async function CustomerPolicyPage({
   const vehicle = Array.isArray(policy.vehicles)
     ? (policy.vehicles[0] ?? null)
     : (policy.vehicles ?? null);
+  const policyDocument = await getPolicyDocumentMetadata(policy.id);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
@@ -116,9 +118,20 @@ export default async function CustomerPolicyPage({
           <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Need to make a claim?</h2>
           <p className="mt-1 text-sm leading-6 text-slate-700">If you&apos;ve been involved in an accident, you can start a motor claim using this policy.</p>
         </div>
-        <Link href="/claim" className={buttonClassName("primary", "mt-5 w-full shrink-0 sm:mt-0 sm:w-auto")}>
-          Make a claim
-        </Link>
+        <div className="mt-5 flex w-full flex-col gap-3 sm:mt-0 sm:w-auto sm:flex-row">
+          {policyDocument ? (
+            <a
+              href={`/dashboard/policies/${policy.id}/document`}
+              className={buttonClassName("secondary", "w-full shrink-0 sm:w-auto")}
+              aria-label={`Download policy ${policy.policy_number}`}
+            >
+              Download policy
+            </a>
+          ) : null}
+          <Link href="/claim" className={buttonClassName("primary", "w-full shrink-0 sm:w-auto")}>
+            Make a claim
+          </Link>
+        </div>
       </section>
 
       <p className="mt-8 border-t border-slate-200 pt-5 text-sm leading-6 text-slate-500">

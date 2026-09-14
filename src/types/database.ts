@@ -52,6 +52,17 @@ export interface Policy {
   vehicles?: Vehicle | Vehicle[] | null;
 }
 
+export interface PolicyDocument {
+  id: string;
+  policy_id: string;
+  document_type: "POLICY_DOCUMENT" | string;
+  file_path: string;
+  file_name: string;
+  mime_type: string;
+  file_size_bytes: number | null;
+  created_at: string;
+}
+
 export interface Claim {
   id: string;
   policy_id: string;
