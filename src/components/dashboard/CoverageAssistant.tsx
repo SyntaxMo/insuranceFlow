@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button, TextArea } from "@/components/ui/Forms";
-import { formatCoverageType, formatCurrency } from "@/lib/format";
+import { formatCoverageType, formatCurrency, formatVehicleName } from "@/lib/format";
 import { COVERAGE_ASSISTANT_QUESTIONS } from "@/lib/coverage-assistant/questions";
 import {
   coverageRecommendationSchema,
@@ -105,6 +105,7 @@ export function CoverageAssistant({
 
   const question = COVERAGE_ASSISTANT_QUESTIONS[questionIndex];
   const currentAnswer = question ? answers[question.key] : undefined;
+  const vehicleName = formatVehicleName(vehicle.make, vehicle.model);
 
   const continueQuestion = () => {
     if (!currentAnswer) return;
@@ -214,7 +215,7 @@ export function CoverageAssistant({
 
             {stage === "questions" && question ? (
               <div className="mt-7">
-                <div className="flex items-center justify-between gap-4 text-xs font-semibold text-slate-500"><span>Question {questionIndex + 1} of {COVERAGE_ASSISTANT_QUESTIONS.length}</span><span>{vehicle.make} {vehicle.model} · {vehicle.year}</span></div>
+                <div className="flex items-center justify-between gap-4 text-xs font-semibold text-slate-500"><span>Question {questionIndex + 1} of {COVERAGE_ASSISTANT_QUESTIONS.length}</span><span>{vehicleName} · {vehicle.year}</span></div>
                 <div className="mt-3 grid grid-cols-5 gap-1" aria-hidden="true">{COVERAGE_ASSISTANT_QUESTIONS.map((_, index) => <span key={index} className={`h-1 rounded-full ${index <= questionIndex ? "bg-[var(--brand-teal)]" : "bg-slate-200"}`} />)}</div>
                 <fieldset className="mt-6">
                   <legend className="text-lg font-semibold leading-7 text-[var(--brand-navy)]">{question.prompt}</legend>
@@ -241,7 +242,7 @@ export function CoverageAssistant({
               <div className="mt-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--brand-teal)]">Optional context</p>
                 <h3 className="mt-2 text-xl font-semibold text-[var(--brand-navy)]">Anything else you want us to consider?</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Your vehicle context is already included: {vehicle.make} {vehicle.model} ({vehicle.year}), estimated value {formatCurrency(vehicle.estimatedValue)}.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Your vehicle context is already included: {vehicleName} ({vehicle.year}), estimated value {formatCurrency(vehicle.estimatedValue)}.</p>
                 <label htmlFor="coverage-assistant-note" className="mt-5 block text-sm font-medium text-slate-800">Additional context <span className="font-normal text-slate-500">(optional)</span></label>
                 <TextArea id="coverage-assistant-note" value={optionalNote} onChange={(event) => setOptionalNote(event.target.value)} maxLength={500} rows={4} className="mt-2 resize-none" placeholder="For example: I drive daily, the car is new, or I mainly want the lowest cost." />
                 <p className="mt-1 text-right text-xs text-slate-500">{optionalNote.length}/500</p>
@@ -277,7 +278,7 @@ export function CoverageAssistant({
                 <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-500" aria-hidden="true">!</div>
                 <h3 className="mt-4 text-xl font-semibold text-[var(--brand-navy)]">We couldn&apos;t generate a recommendation right now.</h3>
                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">You can still compare the coverage options and choose manually.</p>
-                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button type="button" variant="secondary" onClick={closeAssistant}>Back to coverage</Button><Button type="button" onClick={() => setStage("note")}>Try again</Button></div>
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button type="button" variant="secondary" onClick={closeAssistant}>Back to coverage</Button><Button type="button" onClick={requestRecommendation}>Try again</Button></div>
               </div>
             ) : null}
 

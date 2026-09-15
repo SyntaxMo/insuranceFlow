@@ -59,6 +59,24 @@ export function formatCoverageType(value: string): string {
   );
 }
 
+function formatVehiclePart(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word || /[a-z].*[A-Z]|[A-Z].*[a-z]/.test(word)) return word;
+      if (/^[A-Z]{1,3}$/.test(word)) return word;
+      if (!/^[A-Za-z]+$/.test(word)) return word;
+      return `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`;
+    })
+    .join(" ");
+}
+
+/** Display-only formatting that preserves deliberately mixed-case vehicle names. */
+export function formatVehicleName(make: string, model: string): string {
+  return [formatVehiclePart(make), formatVehiclePart(model)].filter(Boolean).join(" ");
+}
+
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Submitted",
   UNDER_REVIEW: "Under review",

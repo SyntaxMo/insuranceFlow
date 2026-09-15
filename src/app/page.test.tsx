@@ -3,15 +3,28 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/components/marketing/Reveal", () => ({ Reveal: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
+const { getAuthenticatedProfileMock, redirectMock } = vi.hoisted(() => ({
+  getAuthenticatedProfileMock: vi.fn(),
+  redirectMock: vi.fn((path: string) => { throw new Error(`NEXT_REDIRECT:${path}`); }),
+}));
 
-import HomePage from "@/app/page";
+vi.mock("@/components/marketing/Reveal", () => ({ Reveal: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
+vi.mock("@/lib/auth/session", () => ({
+  getAuthenticatedProfile: getAuthenticatedProfileMock,
+  routeForRole: (role: string) => role === "CUSTOMER" ? "/dashboard" : "/admin",
+}));
+vi.mock("next/navigation", () => ({ redirect: redirectMock }));
+
+import HomePage, { PublicHomePage } from "@/app/page";
 
 describe("premium public landing page", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
 
   it("renders the product story and existing CTA routes", () => {
-    render(<HomePage />);
+    render(<PublicHomePage />);
     expect(screen.getByRole("heading", { level: 1, name: "Drive with confidence." })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "AI-assisted claims, human decisions." })).toBeTruthy();
     expect(screen.getAllByRole("link", { name: "Create account" })[0].getAttribute("href")).toBe("/signup");
@@ -28,9 +41,28 @@ describe("premium public landing page", () => {
   });
 
   it("loads the optimized car visual with descriptive alternative text", () => {
-    render(<HomePage />);
+    render(<PublicHomePage />);
     const image = screen.getByAltText("Modern dark blue crossover illustrating digital motor insurance coverage");
     expect(image.getAttribute("src")).toContain("hero-car.webp");
     expect(screen.getAllByAltText(/Modern dark blue crossover/)).toHaveLength(1);
+  });
+
+  it("renders the public landing page for an unauthenticated root request", async () => {
+    getAuthenticatedProfileMock.mockResolvedValueOnce(null);
+    render(await HomePage());
+    expect(screen.getByRole("heading", { level: 1, name: "Drive with confidence." })).toBeTruthy();
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("redirects an authenticated customer before returning public page content", async () => {
+    getAuthenticatedProfileMock.mockResolvedValueOnce({ role: "CUSTOMER" });
+    await expect(HomePage()).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("preserves the existing staff destination at the root", async () => {
+    getAuthenticatedProfileMock.mockResolvedValueOnce({ role: "CLAIMS_OFFICER" });
+    await expect(HomePage()).rejects.toThrow("NEXT_REDIRECT:/admin");
+    expect(redirectMock).toHaveBeenCalledWith("/admin");
   });
 });

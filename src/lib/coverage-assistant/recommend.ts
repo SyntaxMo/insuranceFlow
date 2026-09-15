@@ -13,6 +13,21 @@ import {
 export const COVERAGE_ASSISTANT_MODEL = CLAIM_AI_MODEL;
 export const COVERAGE_ASSISTANT_TIMEOUT_MS = 18_000;
 
+const PROHIBITED_PRICING_PATTERNS = [
+  /\bcheapest\b/i,
+  /\blowest\s+price\b/i,
+  /\bmost\s+affordable\b/i,
+  /\bmore\s+affordable\b/i,
+  /\bhigher\s+price\b/i,
+  /\blower\s+price\b/i,
+  /\bmore\s+expensive\b/i,
+  /\bless\s+expensive\b/i,
+  /\bcheaper\b/i,
+  /\blowest\s+premium\b/i,
+  /\bhigher\s+premium\b/i,
+  /\blower\s+premium\b/i,
+] as const;
+
 export class CoverageAssistantError extends Error {
   readonly status: number;
 
@@ -24,7 +39,7 @@ export class CoverageAssistantError extends Error {
 }
 
 class CoverageStructureError extends Error {
-  readonly stage: "json_extraction" | "json_parse" | "schema_validation";
+  readonly stage: "json_extraction" | "json_parse" | "schema_validation" | "content_safety";
   readonly issues: Array<{ path: string; message: string }>;
 
   constructor(
@@ -82,6 +97,18 @@ function parseRecommendation(content: string): CoverageRecommendation {
       })),
     );
   }
+  const customerCopy = [
+    ["headline", parsed.data.headline],
+    ["summary", parsed.data.summary],
+    ...parsed.data.reasons.map((reason, index) => [`reasons.${index}`, reason]),
+    ["comparisonNote", parsed.data.comparisonNote],
+  ] as const;
+  const issues = customerCopy.flatMap(([path, value]) =>
+    PROHIBITED_PRICING_PATTERNS.some((pattern) => pattern.test(value))
+      ? [{ path, message: "Unsupported comparative pricing claim." }]
+      : [],
+  );
+  if (issues.length) throw new CoverageStructureError("content_safety", issues);
   return parsed.data;
 }
 
@@ -226,7 +253,7 @@ export async function recommendCoverage(
         { role: "assistant", content: content.slice(0, 4_000) },
         {
           role: "user",
-          content: "Correct the prior response so it matches the required JSON structure exactly. Return JSON only, preserve the advisory recommendation, use 2 to 4 concise reasons, and use high, medium, or low confidence.",
+          content: "Correct the prior response so it matches the required JSON structure exactly. Return JSON only, preserve the advisory recommendation, use 2 to 4 concise reasons, and use high, medium, or low confidence. Remove any unsupported comparative pricing claim (including cheapest, most affordable, more expensive, higher or lower price, or higher or lower premium). You may describe the customer's cost preference, but do not state or imply that either coverage option actually costs more or less.",
         },
       ]);
       content = responseText(response);

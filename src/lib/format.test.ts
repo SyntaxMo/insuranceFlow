@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCoverageType, formatCurrency, statusLabel, statusTone } from "@/lib/format";
+import { formatCoverageType, formatCurrency, formatVehicleName, statusLabel, statusTone } from "@/lib/format";
 
 describe("Bahraini dinar formatting", () => {
   it.each([
@@ -20,6 +20,14 @@ describe("customer-facing coverage labels", () => {
     ["Third Party", "Third Party"],
   ])("formats %s as %s", (coverage, expected) => {
     expect(formatCoverageType(coverage)).toBe(expected);
+  });
+});
+
+describe("customer-facing vehicle names", () => {
+  it("polishes safely lower-cased vehicle words without mutating identifiers", () => {
+    expect(formatVehicleName("Kia", "sorento")).toBe("Kia Sorento");
+    expect(formatVehicleName("BMW", "iX")).toBe("BMW iX");
+    expect(formatVehicleName("Mazda", "CX-5")).toBe("Mazda CX-5");
   });
 });
 

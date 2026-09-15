@@ -56,6 +56,13 @@ describe("CoverageAssistant", () => {
     expect(screen.getByText(/current manual selection is Third Party/i)).toBeTruthy();
   });
 
+  it("polishes vehicle casing for display without changing request data", async () => {
+    const user = userEvent.setup();
+    render(<CoverageAssistant vehicle={{ make: "Kia", model: "sorento", year: 2026, estimatedValue: 9500 }} selectedCoverage={null} onAccept={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Help me choose" }));
+    expect(screen.getByText("Kia Sorento · 2026")).toBeTruthy();
+  });
+
   it("allows an empty note, shows real-request loading, and applies only an accepted recommendation", async () => {
     const user = userEvent.setup();
     const onAccept = vi.fn();
@@ -87,6 +94,34 @@ describe("CoverageAssistant", () => {
     expect(await screen.findByText("We couldn't generate a recommendation right now.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Back to coverage" }));
     expect(onAccept).not.toHaveBeenCalled();
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("retries immediately with the same answers and note while preserving manual selection", async () => {
+    const user = userEvent.setup();
+    let resolveRetry: ((value: Response | PromiseLike<Response>) => void) | undefined;
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: "safe" }) } as Response)
+      .mockReturnValueOnce(new Promise((resolve) => { resolveRetry = resolve; }) as Promise<Response>);
+    render(<CoverageAssistant vehicle={{ make: "Kia", model: "sorento", year: 2026, estimatedValue: 9500 }} selectedCoverage="THIRD_PARTY" onAccept={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Help me choose" }));
+    await answerQuestions(user);
+    await user.type(screen.getByLabelText(/Additional context/), "I drive daily.");
+    expect(screen.getByText(/current manual selection is Third Party/i)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Get recommendation" }));
+    expect(await screen.findByText("We couldn't generate a recommendation right now.")).toBeTruthy();
+
+    const firstBody = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByRole("status").textContent).toContain("Finding the best fit for you");
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+    const secondBody = JSON.parse(String(vi.mocked(fetch).mock.calls[1][1]?.body));
+    expect(secondBody).toEqual(firstBody);
+    expect(secondBody.optionalNote).toBe("I drive daily.");
+    expect(secondBody.vehicle.model).toBe("sorento");
+
+    resolveRetry?.({ ok: true, json: async () => ({ recommendation: comprehensiveRecommendation }) } as Response);
+    expect(await screen.findByRole("button", { name: "Use Comprehensive" })).toBeTruthy();
   });
 });

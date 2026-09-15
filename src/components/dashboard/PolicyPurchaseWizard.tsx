@@ -57,6 +57,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
   const [step, setStep] = useState(1);
   const [values, setValues] = useState<FormValues>({ make: "", model: "", year: String(new Date().getFullYear()), plateNumber: "", vin: "", estimatedVehicleValue: "" });
   const [coverage, setCoverage] = useState<DemoCoverage | null>(null);
+  const [coverageValidationAttempted, setCoverageValidationAttempted] = useState(false);
   const [quoteView, setQuoteView] = useState<QuoteView | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -84,7 +85,11 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
   };
 
   const requestQuote = async () => {
-    if (!coverage || quoting) return;
+    if (quoting) return;
+    if (!coverage) {
+      setCoverageValidationAttempted(true);
+      return;
+    }
     setQuoting(true);
     setMessage(null);
     try {
@@ -162,7 +167,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
               { id: "COMPREHENSIVE" as const, description: "Covers damage to your insured vehicle subject to the policy terms and conditions.", excess: 150, limit: Number(values.estimatedVehicleValue) },
               { id: "THIRD_PARTY" as const, description: "Covers third-party liability subject to the policy terms and conditions.", excess: 0, limit: 100000 },
             ]).map((option) => (
-              <button key={option.id} type="button" onClick={() => { setCoverage(option.id); setMessage(null); setConsentAccepted(false); }} className={`flex h-full min-w-0 flex-col rounded-2xl border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)] sm:p-6 ${coverage === option.id ? "border-[var(--brand-teal)] bg-teal-50/70 shadow-[0_16px_35px_-28px_rgba(13,148,136,0.8)] ring-1 ring-[var(--brand-teal)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"}`} aria-pressed={coverage === option.id} aria-label={`${formatCoverageType(option.id)} coverage${coverage === option.id ? ", selected" : ""}`}>
+              <button key={option.id} type="button" onClick={() => { setCoverage(option.id); setCoverageValidationAttempted(false); setMessage(null); setConsentAccepted(false); }} className={`flex h-full min-w-0 flex-col rounded-2xl border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)] sm:p-6 ${coverage === option.id ? "border-[var(--brand-teal)] bg-teal-50/70 shadow-[0_16px_35px_-28px_rgba(13,148,136,0.8)] ring-1 ring-[var(--brand-teal)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"}`} aria-pressed={coverage === option.id} aria-label={`${formatCoverageType(option.id)} coverage${coverage === option.id ? ", selected" : ""}`}>
                 <span className="flex w-full flex-wrap items-start justify-between gap-3">
                   <span className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">{formatCoverageType(option.id)}</span>
                   {coverage === option.id ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-200"><span aria-hidden="true">✓</span> Selected</span> : null}
@@ -182,12 +187,13 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
             selectedCoverage={coverage}
             onAccept={(recommendedCoverage) => {
               setCoverage(recommendedCoverage);
+              setCoverageValidationAttempted(false);
               setMessage(null);
               setConsentAccepted(false);
             }}
           />
-          {!coverage ? <p className="mt-3 text-sm text-rose-600">Choose a coverage option to continue.</p> : null}
-          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(1)}>Back</Button><Button type="button" className="w-full sm:w-auto" disabled={!coverage || quoting} onClick={requestQuote}>{quoting ? "Preparing quote..." : "See your quote"}</Button></div>
+          {coverageValidationAttempted && !coverage ? <p role="alert" className="mt-3 text-sm text-rose-600">Choose a coverage option to continue.</p> : null}
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setStep(1)}>Back</Button><Button type="button" className="w-full sm:w-auto" disabled={quoting} onClick={requestQuote}>{quoting ? "Preparing quote..." : "See your quote"}</Button></div>
         </section>
       ) : null}
 

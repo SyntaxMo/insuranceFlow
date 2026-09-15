@@ -44,7 +44,10 @@ async function reachPaymentStep() {
 }
 
 describe("PolicyPurchaseWizard presentation", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,6 +70,11 @@ describe("PolicyPurchaseWizard presentation", () => {
   it("communicates coverage selection with text and aria state", async () => {
     const user = await reachCoverageStep();
     expect(screen.getByRole("button", { name: "Help me choose" })).toBeTruthy();
+    expect(screen.queryByText("Choose a coverage option to continue.")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "See your quote" }));
+    expect(screen.getByRole("alert").textContent).toBe("Choose a coverage option to continue.");
+
     const option = screen.getByRole("button", { name: "Comprehensive coverage" });
 
     expect(option.getAttribute("aria-pressed")).toBe("false");
@@ -74,6 +82,39 @@ describe("PolicyPurchaseWizard presentation", () => {
 
     expect(option.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText("Selected")).toBeTruthy();
+    expect(screen.queryByText("Choose a coverage option to continue.")).toBeNull();
+  });
+
+  it("clears an invalid coverage attempt when an AI recommendation is accepted", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ recommendation: {
+        recommendedCoverage: "COMPREHENSIVE",
+        headline: "Comprehensive may suit you better",
+        summary: "Your answers favor protecting your own vehicle.",
+        reasons: ["Own-vehicle protection matters to you.", "You prefer help with repair costs."],
+        comparisonNote: "Third Party focuses mainly on liability to others.",
+        confidence: "high",
+      } }),
+    }));
+    const user = await reachCoverageStep();
+    await user.click(screen.getByRole("button", { name: "See your quote" }));
+    expect(screen.getByRole("alert")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Help me choose" }));
+    for (const [index, answer] of [
+      "Very important",
+      "Broader protection",
+      "I would prefer insurance to help cover it",
+      "My vehicle and liability to others",
+      "I prefer stronger protection and predictability",
+    ].entries()) {
+      await user.click(screen.getByLabelText(answer));
+      await user.click(screen.getByRole("button", { name: index === 4 ? "Continue" : "Next question" }));
+    }
+    await user.click(screen.getByRole("button", { name: "Get recommendation" }));
+    await user.click(await screen.findByRole("button", { name: "Use Comprehensive" }));
+    expect(screen.queryByText("Choose a coverage option to continue.")).toBeNull();
+    expect(screen.getByRole("button", { name: /Comprehensive coverage, selected/ })).toBeTruthy();
   });
 
   it("shows customer-friendly quote explanation and formatted coverage", async () => {

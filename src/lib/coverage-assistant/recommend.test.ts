@@ -133,6 +133,68 @@ describe("recommendCoverage", () => {
     expect(repairMessages.at(-1).content).toContain("Correct the prior response");
   });
 
+  it.each(["cheapest", "higher price"])(
+    "repairs an otherwise valid response containing the prohibited pricing claim %s",
+    async (claim) => {
+      const unsafe = response("THIRD_PARTY");
+      const parsed = JSON.parse(unsafe.choices[0].message.content);
+      parsed.summary = `Third Party has the ${claim} for you.`;
+      sendMock
+        .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify(parsed) } }] })
+        .mockResolvedValueOnce(response("THIRD_PARTY"));
+
+      await expect(recommendCoverage(input)).resolves.toMatchObject({
+        recommendedCoverage: "THIRD_PARTY",
+      });
+      expect(sendMock).toHaveBeenCalledTimes(2);
+      expect(sendMock.mock.calls[1][0].chatRequest.messages.at(-1).content).toContain(
+        "Remove any unsupported comparative pricing claim",
+      );
+    },
+  );
+
+  it("returns the existing safe error when pricing-language repair remains unsafe", async () => {
+    const unsafe = response("THIRD_PARTY");
+    const parsed = JSON.parse(unsafe.choices[0].message.content);
+    parsed.comparisonNote = "Third Party is cheaper.";
+    sendMock.mockResolvedValue({ choices: [{ message: { content: JSON.stringify(parsed) } }] });
+
+    await expect(recommendCoverage(input)).rejects.toMatchObject({
+      message: "Coverage guidance is not available right now.",
+      status: 502,
+    });
+    expect(sendMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows customer cost-preference language without treating it as a pricing fact", async () => {
+    const allowed = response("THIRD_PARTY");
+    const parsed = JSON.parse(allowed.choices[0].message.content);
+    parsed.summary = "Keeping costs low is important to you.";
+    parsed.confidence = "low";
+    sendMock.mockResolvedValue({ choices: [{ message: { content: JSON.stringify(parsed) } }] });
+
+    await expect(recommendCoverage(mixedInput)).resolves.toMatchObject({
+      recommendedCoverage: "THIRD_PARTY",
+      confidence: "low",
+    });
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves high confidence for aligned preferences and medium confidence for mixed preferences", async () => {
+    const aligned = response("COMPREHENSIVE");
+    const alignedParsed = JSON.parse(aligned.choices[0].message.content);
+    alignedParsed.confidence = "high";
+    const mixed = response("COMPREHENSIVE");
+    const mixedParsed = JSON.parse(mixed.choices[0].message.content);
+    mixedParsed.confidence = "medium";
+    sendMock
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify(alignedParsed) } }] })
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify(mixedParsed) } }] });
+
+    await expect(recommendCoverage(input)).resolves.toMatchObject({ confidence: "high" });
+    await expect(recommendCoverage(mixedInput)).resolves.toMatchObject({ confidence: "medium" });
+  });
+
   it.each([
     ["malformed JSON", { choices: [{ message: { content: "not-json" } }] }],
     ["unsupported coverage", { choices: [{ message: { content: JSON.stringify({ ...response("COMPREHENSIVE").choices[0].message, recommendedCoverage: "HYBRID" }) } }] }],

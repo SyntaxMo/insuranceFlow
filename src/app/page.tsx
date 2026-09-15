@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { HelpFaq } from "@/components/marketing/HelpFaq";
 import { HeroCoverageStory } from "@/components/marketing/HeroCoverageStory";
 import { Reveal } from "@/components/marketing/Reveal";
 import { buttonClassName } from "@/components/ui/Forms";
+import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
 
 const steps = [
   ["01", "Add your vehicle", "Enter essential vehicle details using a focused, guided flow."],
@@ -32,7 +34,7 @@ function CheckIcon() {
   return <svg viewBox="0 0 20 20" aria-hidden="true" className="size-5" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
-export default function HomePage() {
+export function PublicHomePage() {
   return (
     <div className="overflow-x-clip bg-[#f7fafb]">
       <HeroCoverageStory />
@@ -108,4 +110,10 @@ export default function HomePage() {
       </section>
     </div>
   );
+}
+
+export default async function HomePage() {
+  const profile = await getAuthenticatedProfile();
+  if (profile) redirect(routeForRole(profile.role));
+  return <PublicHomePage />;
 }
