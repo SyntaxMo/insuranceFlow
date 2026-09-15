@@ -85,6 +85,36 @@ describe("PolicyPurchaseWizard presentation", () => {
     expect(screen.queryByText("Choose a coverage option to continue.")).toBeNull();
   });
 
+  it("uses selected make and model suggestions in the existing quote and assistant context", async () => {
+    const user = userEvent.setup();
+    render(<PolicyPurchaseWizard customer={{ fullName: "Maya Ali", email: "maya@example.com" }} requestId="22087e7d-4c89-4b10-9620-ec8c525b0718" />);
+    await user.type(screen.getByLabelText("Make"), "ki");
+    await user.click(screen.getByRole("option", { name: "Kia" }));
+    await user.type(screen.getByLabelText("Model"), "sor");
+    await user.click(screen.getByRole("option", { name: "Sorento" }));
+    await user.type(screen.getByLabelText("Plate number"), "927410");
+    await user.type(screen.getByLabelText("Estimated vehicle value"), "9500");
+    await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
+
+    await user.click(screen.getByRole("button", { name: "Help me choose" }));
+    expect(screen.getByText("Kia Sorento · 2026")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Close coverage assistant" }));
+    await user.click(screen.getByRole("button", { name: "Comprehensive coverage" }));
+    await user.click(screen.getByRole("button", { name: "See your quote" }));
+    expect(getDemoPolicyQuoteMock).toHaveBeenCalledWith(expect.objectContaining({ make: "Kia", model: "Sorento" }));
+  });
+
+  it("allows an unknown free-typed make and model to continue through existing validation", async () => {
+    const user = userEvent.setup();
+    render(<PolicyPurchaseWizard customer={{ fullName: "Maya Ali", email: "maya@example.com" }} requestId="22087e7d-4c89-4b10-9620-ec8c525b0718" />);
+    await user.type(screen.getByLabelText("Make"), "CustomBrand");
+    await user.type(screen.getByLabelText("Model"), "CustomModel");
+    await user.type(screen.getByLabelText("Plate number"), "927410");
+    await user.type(screen.getByLabelText("Estimated vehicle value"), "9500");
+    await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
+    expect(screen.getByRole("heading", { name: "Choose coverage" })).toBeTruthy();
+  });
+
   it("clears an invalid coverage attempt when an AI recommendation is accepted", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,

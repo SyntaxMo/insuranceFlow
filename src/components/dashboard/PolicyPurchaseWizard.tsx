@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { getDemoPolicyQuote, issueDemoPolicy, type IssuePolicyState } from "@/app/dashboard/policies/new/actions";
 import { CoverageAssistant } from "@/components/dashboard/CoverageAssistant";
+import { VehicleMakeAutocomplete, VehicleModelAutocomplete } from "@/components/dashboard/VehicleAutocomplete";
 import { Alert, Button, Card, Field, TextInput, buttonClassName } from "@/components/ui/Forms";
 import { formatCoverageType, formatCurrency, formatDate } from "@/lib/format";
 import type { DemoCoverage, DemoQuote } from "@/lib/policies/quote";
@@ -147,8 +148,8 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
           <h2 id="vehicle-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Tell us about your vehicle</h2>
           <p className="mt-2 text-sm text-slate-600">Enter the vehicle details used for this demonstration quote. Nothing is saved yet.</p>
           <div className="mt-6 grid gap-x-5 gap-y-6 sm:grid-cols-2">
-            <Field label="Make" htmlFor="make" error={fieldErrors.make}><TextInput id="make" value={values.make} onChange={(e) => update("make", e.target.value)} placeholder="Toyota" maxLength={60} /></Field>
-            <Field label="Model" htmlFor="model" error={fieldErrors.model}><TextInput id="model" value={values.model} onChange={(e) => update("model", e.target.value)} placeholder="Corolla" maxLength={60} /></Field>
+            <Field label="Make" htmlFor="make" error={fieldErrors.make}><VehicleMakeAutocomplete value={values.make} onChange={(value) => update("make", value)} /></Field>
+            <Field label="Model" htmlFor="model" error={fieldErrors.model}><VehicleModelAutocomplete make={values.make} value={values.model} onChange={(value) => update("model", value)} /></Field>
             <Field label="Year" htmlFor="year" error={fieldErrors.year}><TextInput id="year" inputMode="numeric" value={values.year} onChange={(e) => update("year", e.target.value)} /></Field>
             <Field label="Plate number" htmlFor="plate" error={fieldErrors.plateNumber} hint="Enter the 5 or 6 digit Bahrain plate number."><TextInput id="plate" value={values.plateNumber} onChange={(e) => update("plateNumber", e.target.value)} placeholder="123456" inputMode="numeric" pattern="[0-9]{5,6}" maxLength={6} autoComplete="off" /></Field>
             <Field label="VIN (optional)" htmlFor="vin" error={fieldErrors.vin} hint="If entered, use the 17-character vehicle identification number."><TextInput id="vin" value={values.vin} onChange={(e) => update("vin", e.target.value)} placeholder="Optional" maxLength={20} /></Field>
