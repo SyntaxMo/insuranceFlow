@@ -80,7 +80,7 @@ export function formatVehicleName(make: string, model: string): string {
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Submitted",
   UNDER_REVIEW: "Under review",
-  MORE_INFO_REQUIRED: "Action required",
+  MORE_INFO_REQUIRED: "More information required",
   APPROVED: "Approved",
   REJECTED: "Rejected",
   CLOSED: "Closed",
@@ -89,6 +89,19 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: "Expired",
   CANCELLED: "Cancelled",
 };
+
+const OFFICER_CLAIM_STATUS_LABELS: Record<string, string> = {
+  SUBMITTED: "New",
+  UNDER_REVIEW: "Under Review",
+  MORE_INFO_REQUIRED: "Waiting on Customer",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  CLOSED: "Closed",
+};
+
+export function officerClaimStatusLabel(status: string): string {
+  return OFFICER_CLAIM_STATUS_LABELS[status.trim().toUpperCase()] || statusLabel(status);
+}
 
 export function statusLabel(status: string): string {
   const normalized = status.trim().toUpperCase();

@@ -35,7 +35,7 @@ describe("customer-facing statuses", () => {
   it.each([
     ["SUBMITTED", "Submitted"],
     ["UNDER_REVIEW", "Under review"],
-    ["MORE_INFO_REQUIRED", "Action required"],
+    ["MORE_INFO_REQUIRED", "More information required"],
     ["APPROVED", "Approved"],
     ["REJECTED", "Rejected"],
   ])("maps %s to %s", (status, label) => {

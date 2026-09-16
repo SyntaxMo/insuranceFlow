@@ -1,12 +1,21 @@
+import type { ClaimAnalysisFailureCategory } from "@/lib/ai/provider-errors";
+
 export class ClaimAnalysisError extends Error {
   readonly status: number;
   readonly supabaseSql?: string;
+  readonly category: ClaimAnalysisFailureCategory;
 
-  constructor(message: string, status = 500, supabaseSql?: string) {
+  constructor(
+    message: string,
+    status = 500,
+    supabaseSql?: string,
+    category: ClaimAnalysisFailureCategory = "INTERNAL_ERROR",
+  ) {
     super(message);
     this.name = "ClaimAnalysisError";
     this.status = status;
     this.supabaseSql = supabaseSql;
+    this.category = category;
   }
 }
 

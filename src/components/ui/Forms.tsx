@@ -1,4 +1,4 @@
-import type { ComponentPropsWithRef, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { forwardRef, type ComponentPropsWithRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -82,17 +82,18 @@ export function TextInput({
   );
 }
 
-export function TextArea({
-  className = "",
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export const TextArea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement>
+>(function TextArea({ className = "", ...props }, ref) {
   return (
     <textarea
+      ref={ref}
       className={`w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[var(--brand-teal)] focus:ring-2 focus:ring-[var(--brand-teal)]/20 ${className}`}
       {...props}
     />
   );
-}
+});
 
 export function Alert({
   tone = "error",

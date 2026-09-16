@@ -16,6 +16,7 @@ export interface PreparedClaimDocument {
   fileName: string;
   kind: PreparedDocumentKind;
   mimeType: string | null;
+  byteSize: number;
   note: string;
   dataUrl?: string;
 }
@@ -59,8 +60,10 @@ export async function prepareClaimDocuments(
     if (error || !data) {
       console.error("[claim-analysis] document download failed:", {
         documentId: doc.id,
-        fileName: doc.fileName,
-        error: error ? safeErrorDetails(error) : { message: "No data returned" },
+        documentType: doc.documentType,
+        error: error
+          ? safeErrorDetails(error)
+          : { message: "No data returned" },
       });
       prepared.push({
         id: doc.id,
@@ -68,7 +71,8 @@ export async function prepareClaimDocuments(
         fileName: doc.fileName,
         kind: "inaccessible",
         mimeType: guessedMime,
-        note: `${documentTypeLabel(doc.documentType)} (${doc.fileName}) could not be accessed for analysis.`,
+        byteSize: 0,
+        note: `${documentTypeLabel(doc.documentType)} could not be accessed for analysis.`,
       });
       continue;
     }
@@ -83,7 +87,8 @@ export async function prepareClaimDocuments(
         fileName: doc.fileName,
         kind,
         mimeType,
-        note: `${documentTypeLabel(doc.documentType)} (${doc.fileName}) uses an unsupported format and was not sent to the model.`,
+        byteSize: data.size,
+        note: `${documentTypeLabel(doc.documentType)} uses an unsupported format and was not sent to the model.`,
       });
       continue;
     }
@@ -95,7 +100,8 @@ export async function prepareClaimDocuments(
         fileName: doc.fileName,
         kind: "unsupported",
         mimeType,
-        note: `${documentTypeLabel(doc.documentType)} (${doc.fileName}) was not attached because the image limit was reached.`,
+        byteSize: data.size,
+        note: `${documentTypeLabel(doc.documentType)} was not attached because the image limit was reached.`,
       });
       continue;
     }
@@ -107,7 +113,8 @@ export async function prepareClaimDocuments(
         fileName: doc.fileName,
         kind: "unsupported",
         mimeType,
-        note: `${documentTypeLabel(doc.documentType)} (${doc.fileName}) was not attached because the PDF limit was reached.`,
+        byteSize: data.size,
+        note: `${documentTypeLabel(doc.documentType)} was not attached because the PDF limit was reached.`,
       });
       continue;
     }
@@ -124,8 +131,9 @@ export async function prepareClaimDocuments(
       fileName: doc.fileName,
       kind,
       mimeType,
+      byteSize: buffer.byteLength,
       dataUrl,
-      note: `${documentTypeLabel(doc.documentType)} (${doc.fileName}) is attached for review.`,
+      note: `${documentTypeLabel(doc.documentType)} is attached for review.`,
     });
   }
 

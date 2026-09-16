@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Card } from "@/components/ui/Forms";
 import { formatCurrency } from "@/lib/format";
 import type { ClaimAnalysisResult } from "@/types/ai-analysis";
@@ -13,6 +13,8 @@ const ANALYSIS_STAGES = [
   "Checking inconsistencies",
   "Preparing analysis",
 ] as const;
+
+const ANALYSIS_CLIENT_TIMEOUT_MS = 105_000;
 
 function AnalysisProgress({ activeStage }: { activeStage: number }) {
   return (
@@ -239,7 +241,7 @@ export function AiClaimAnalysis({
   const [loading, setLoading] = useState(false);
   const [activeStage, setActiveStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [sql, setSql] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -259,14 +261,22 @@ export function AiClaimAnalysis({
   }
 
   async function handleAnalyze() {
+    if (requestInFlight.current || analysis) return;
+    requestInFlight.current = true;
     setActiveStage(0);
     setLoading(true);
     setError(null);
-    setSql(null);
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      ANALYSIS_CLIENT_TIMEOUT_MS,
+    );
 
     try {
       const response = await fetch(`/api/admin/claims/${claimId}/analyze`, {
         method: "POST",
+        signal: controller.signal,
       });
       const payload = (await response.json()) as unknown;
       await finishProgress();
@@ -274,14 +284,13 @@ export function AiClaimAnalysis({
       if (!response.ok) {
         const record =
           payload && typeof payload === "object"
-            ? (payload as { error?: unknown; setupSql?: unknown })
+            ? (payload as { error?: unknown })
             : {};
         const message =
           typeof record.error === "string"
             ? record.error
             : "Unable to analyze this claim right now.";
         setError(message);
-        if (typeof record.setupSql === "string") setSql(record.setupSql);
         return;
       }
 
@@ -298,27 +307,33 @@ export function AiClaimAnalysis({
       }
 
       setAnalysis(wrapped);
-    } catch {
+    } catch (requestError) {
       await finishProgress();
-      setError("Unable to analyze this claim right now.");
+      setError(
+        requestError instanceof DOMException && requestError.name === "AbortError"
+          ? "The analysis took too long to complete. Please try again."
+          : "Unable to analyze this claim right now. Please try again.",
+      );
     } finally {
+      window.clearTimeout(timeout);
+      requestInFlight.current = false;
       setLoading(false);
     }
   }
 
   return (
-    <Card className="space-y-5">
+    <Card className="space-y-5 border-teal-100 bg-gradient-to-br from-teal-50/45 to-white">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            AI Claim Analysis
+            AI-assisted review
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Structured assistance for the claims officer. The AI does not approve
-            or reject the claim.
+            AI analysis supports the review process and does not approve or reject
+            claims. Final decisions are made by the Claims Officer.
           </p>
         </div>
-        {!loading ? (
+        {!loading && !analysis && !error ? (
           <Button type="button" onClick={handleAnalyze}>
             Analyze with AI
           </Button>
@@ -331,11 +346,9 @@ export function AiClaimAnalysis({
         <Alert tone="error">
           <p className="font-semibold">Analysis failed</p>
           <p className="mt-1">{error}</p>
-          {sql ? (
-            <pre className="mt-3 overflow-x-auto rounded-lg bg-white/70 p-3 text-xs text-slate-800">
-              {sql}
-            </pre>
-          ) : null}
+          <Button type="button" className="mt-3" onClick={handleAnalyze}>
+            Try again
+          </Button>
         </Alert>
       ) : null}
 

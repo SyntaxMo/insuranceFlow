@@ -11,6 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import {
   getCustomerDashboard,
+  getCustomerClaimDetails,
   getCustomerPolicyDetails,
 } from "@/lib/claims/customer";
 
@@ -126,6 +127,49 @@ describe("getCustomerDashboard", () => {
 
     expect(from).toHaveBeenCalledTimes(2);
     expect(result).toEqual({ policies: [], claims: [], error: null });
+  });
+});
+
+describe("getCustomerClaimDetails", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns customer-safe request and decision history for an owned claim", async () => {
+    const claimQuery = singleEqResult({ data: {
+      id: "claim-1", policy_id: "policy-1", claim_number: "CLM-1",
+      status: "MORE_INFO_REQUIRED", accident_date: "2026-09-10",
+      accident_location: "Manama", description: "Rear collision details",
+      created_at: "2026-09-11T10:00:00Z", updated_at: "2026-09-11T11:00:00Z",
+    }, error: null });
+    const policyQuery = singleEqResult({ data: {
+      ...policy("policy-1", "POL-1", "Toyota"),
+      user_id: "portal-user",
+    }, error: null });
+    const historyQuery = orderedEqResult({ data: [
+      { id: "h0", claim_id: "claim-1", from_status: "UNDER_REVIEW", to_status: "SUBMITTED", action: "REVIEW_RETURNED", note: null, actor_user_id: "officer", actor_role: "CLAIMS_OFFICER", created_at: "2026-09-11T10:30:00Z" },
+      { id: "h1", claim_id: "claim-1", from_status: "UNDER_REVIEW", to_status: "MORE_INFO_REQUIRED", action: "MORE_INFO_REQUESTED", note: "Please upload the police report.", actor_user_id: "officer", actor_role: "CLAIMS_OFFICER", created_at: "2026-09-11T11:00:00Z" },
+      { id: "h2", claim_id: "claim-1", from_status: "UNDER_REVIEW", to_status: "APPROVED", action: "CLAIM_APPROVED", note: "Internal approval note", actor_user_id: "officer", actor_role: "CLAIMS_OFFICER", created_at: "2026-09-11T12:00:00Z" },
+    ], error: null });
+    createServiceRoleClientMock.mockReturnValue({ from: vi.fn()
+      .mockReturnValueOnce(claimQuery)
+      .mockReturnValueOnce(policyQuery)
+      .mockReturnValueOnce(historyQuery) });
+
+    const result = await getCustomerClaimDetails("portal-user", "claim-1");
+    expect(result.claim?.latestInformationRequest).toBe("Please upload the police report.");
+    expect(result.claim?.history.map((event) => event.action)).toContain("REVIEW_RETURNED");
+    expect(result.claim?.history[0]?.actor_user_id).toBeNull();
+    expect(result.claim?.history[2]?.note).toBeNull();
+  });
+
+  it("does not expose another customer's claim", async () => {
+    const claimQuery = singleEqResult({ data: { id: "claim-1", policy_id: "policy-1" }, error: null });
+    const policyQuery = singleEqResult({ data: { ...policy("policy-1", "POL-1", "Toyota"), user_id: "owner" }, error: null });
+    const linkQuery = singleEqResult({ data: null, error: null });
+    createServiceRoleClientMock.mockReturnValue({ from: vi.fn()
+      .mockReturnValueOnce(claimQuery)
+      .mockReturnValueOnce(policyQuery)
+      .mockReturnValueOnce(linkQuery) });
+    await expect(getCustomerClaimDetails("other-user", "claim-1")).resolves.toEqual({ claim: null, error: null });
   });
 });
 

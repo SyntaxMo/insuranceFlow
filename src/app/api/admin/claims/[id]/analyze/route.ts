@@ -32,11 +32,12 @@ export async function POST(
     return NextResponse.json({ analysis });
   } catch (err) {
     if (err instanceof ClaimAnalysisError) {
+      console.error("[claim-analysis] request failed safely:", {
+        category: err.category,
+        status: err.status,
+      });
       return NextResponse.json(
-        {
-          error: err.message,
-          ...(err.supabaseSql ? { setupSql: err.supabaseSql } : {}),
-        },
+        { error: "Unable to analyze this claim right now. Please try again." },
         { status: err.status },
       );
     }

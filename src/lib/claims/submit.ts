@@ -142,20 +142,20 @@ export async function submitClaim(
   const supabase = createServiceRoleClient();
   const claimNumber = await createUniqueClaimNumber();
 
-  const { data: claim, error: claimError } = await supabase
-    .from("claims")
-    .insert({
-      policy_id: verification.policy.policyId,
-      claim_number: claimNumber,
-      accident_date: accident.accidentDate,
-      accident_location: accident.accidentLocation,
-      description: accident.description,
-      contact_email: accident.email,
-      contact_phone: accident.phone,
-      status: "SUBMITTED",
-    })
-    .select("id, claim_number")
-    .single();
+  const { data: createdClaims, error: claimError } = await supabase.rpc(
+    "create_claim_with_history",
+    {
+      p_policy_id: verification.policy.policyId,
+      p_claim_number: claimNumber,
+      p_accident_date: accident.accidentDate,
+      p_accident_location: accident.accidentLocation,
+      p_description: accident.description,
+      p_contact_email: accident.email,
+      p_contact_phone: accident.phone,
+      p_actor_user_id: customer.id,
+    },
+  );
+  const claim = Array.isArray(createdClaims) ? createdClaims[0] : null;
 
   if (claimError || !claim) {
     console.error("Claim insert failed:", claimError?.message);
@@ -182,7 +182,7 @@ export async function submitClaim(
       uploadedPaths.push(uploaded.filePath);
 
       const { error: docError } = await supabase.from("claim_documents").insert({
-        claim_id: claim.id,
+        claim_id: claim.claim_id,
         document_type: document.documentType,
         file_name: document.file.name,
         file_path: uploaded.filePath,
@@ -201,7 +201,7 @@ export async function submitClaim(
     if (uploadedPaths.length > 0) {
       await supabase.storage.from(getStorageBucket()).remove(uploadedPaths);
     }
-    await supabase.from("claims").delete().eq("id", claim.id);
+    await supabase.from("claims").delete().eq("id", claim.claim_id);
 
     return {
       ok: false,

@@ -144,6 +144,8 @@ export function documentTypeLabel(type: DocumentType | string): string {
       return "Repair Estimate";
     case "ACCIDENT_PHOTO":
       return "Accident Photo";
+    case "ADDITIONAL_INFORMATION":
+      return "Additional Information";
     default:
       return type;
   }

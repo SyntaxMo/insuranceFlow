@@ -1,7 +1,14 @@
 import "server-only";
 
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import type { Claim, Policy, Vehicle } from "@/types/database";
+import { CUSTOMER_VISIBLE_HISTORY_ACTIONS } from "@/lib/claims/workflow";
+import type {
+  Claim,
+  ClaimHistoryAction,
+  ClaimStatusHistory,
+  Policy,
+  Vehicle,
+} from "@/types/database";
 
 export type CustomerVehicle = Pick<
   Vehicle,
@@ -31,6 +38,16 @@ export type CustomerClaim = Pick<
   Claim,
   "id" | "policy_id" | "claim_number" | "status" | "accident_date" | "created_at"
 > & { vehicle: CustomerVehicle | null };
+
+export type CustomerClaimDetail = CustomerClaim & Pick<
+  Claim,
+  "accident_location" | "description" | "updated_at"
+> & {
+  policyNumber: string;
+  history: ClaimStatusHistory[];
+  latestInformationRequest: string | null;
+  rejectionReason: string | null;
+};
 
 function oneVehicle(
   value: CustomerVehicle | CustomerVehicle[] | null | undefined,
@@ -168,6 +185,64 @@ export async function getCustomerPolicyDetails(
       ...(data as Omit<CustomerPolicy, "accessType">),
       accessType: "LINKED",
     },
+    error: null,
+  };
+}
+
+export async function getCustomerClaimDetails(
+  userId: string,
+  claimId: string,
+): Promise<{ claim: CustomerClaimDetail | null; error: string | null }> {
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
+    .from("claims")
+    .select("id, policy_id, claim_number, status, accident_date, accident_location, description, created_at, updated_at")
+    .eq("id", claimId)
+    .maybeSingle();
+  if (error) {
+    console.error("Customer claim detail read failed:", error.message);
+    return { claim: null, error: "Unable to load this claim right now." };
+  }
+  if (!data) return { claim: null, error: null };
+
+  const authorization = await getCustomerPolicyDetails(userId, data.policy_id);
+  if (authorization.error) return { claim: null, error: authorization.error };
+  if (!authorization.policy) return { claim: null, error: null };
+
+  const { data: history, error: historyError } = await supabase
+    .from("claim_status_history")
+    .select("id, claim_id, from_status, to_status, action, note, actor_user_id, actor_role, created_at")
+    .eq("claim_id", claimId)
+    .order("created_at", { ascending: true });
+  if (historyError) {
+    console.error("Customer claim history read failed:", historyError.message);
+    return { claim: null, error: "Unable to load this claim's history right now." };
+  }
+
+  const vehicle = oneVehicle(authorization.policy.vehicles);
+  const visibleHistory = ((history || []) as ClaimStatusHistory[])
+    .filter((event) =>
+      CUSTOMER_VISIBLE_HISTORY_ACTIONS.has(event.action as ClaimHistoryAction),
+    )
+    .map((event) => ({
+      ...event,
+      actor_user_id: null,
+      note: ["MORE_INFO_REQUESTED", "CUSTOMER_INFO_SUBMITTED", "CLAIM_REJECTED"].includes(event.action)
+        ? event.note
+        : null,
+    }));
+  const latestRequest = [...visibleHistory].reverse().find((event) => event.action === "MORE_INFO_REQUESTED");
+  const rejection = [...visibleHistory].reverse().find((event) => event.action === "CLAIM_REJECTED");
+
+  return {
+    claim: {
+      ...data,
+      vehicle,
+      policyNumber: authorization.policy.policy_number,
+      history: visibleHistory,
+      latestInformationRequest: latestRequest?.note || null,
+      rejectionReason: rejection?.note || null,
+    } as CustomerClaimDetail,
     error: null,
   };
 }

@@ -49,7 +49,12 @@ export const claimAnalysisPayloadSchema = z.object({
 export function extractJsonObject(text: string): unknown {
   const trimmed = text.trim();
   if (!trimmed) {
-    throw new ClaimAnalysisError("The AI returned an empty response.", 502);
+    throw new ClaimAnalysisError(
+      "The AI returned an empty response.",
+      502,
+      undefined,
+      "INVALID_MODEL_RESPONSE",
+    );
   }
 
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -79,6 +84,8 @@ export function extractJsonObject(text: string): unknown {
   throw new ClaimAnalysisError(
     "The AI response was not valid JSON. Please try again.",
     502,
+    undefined,
+    "INVALID_MODEL_RESPONSE",
   );
 }
 
@@ -92,6 +99,8 @@ export function parseClaimAnalysis(
     throw new ClaimAnalysisError(
       "The AI response could not be validated. Please try again.",
       502,
+      undefined,
+      "INVALID_MODEL_RESPONSE",
     );
   }
 
