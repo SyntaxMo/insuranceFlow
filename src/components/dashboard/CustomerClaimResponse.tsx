@@ -26,7 +26,7 @@ export function CustomerClaimResponse({ claimId, requestMessage }: { claimId: st
         setError(payload.error || "We couldn't submit the additional information.");
         return;
       }
-      router.refresh();
+      router.replace(`/dashboard/claims/${claimId}?submitted=1`);
     } catch {
       setError("We couldn't submit the additional information. Please try again.");
     } finally {

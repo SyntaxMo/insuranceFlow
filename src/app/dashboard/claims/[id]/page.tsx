@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert, Card } from "@/components/ui/Forms";
 import { CustomerClaimResponse } from "@/components/dashboard/CustomerClaimResponse";
+import { CustomerClaimSubmissionSuccess } from "@/components/dashboard/CustomerClaimSubmissionSuccess";
 import { ClaimHistory } from "@/components/claims/ClaimHistory";
 import { getCustomerClaimDetails } from "@/lib/claims/customer";
 import { formatDate, statusLabel, statusTone } from "@/lib/format";
@@ -9,8 +10,14 @@ import { requireCustomer } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomerClaimPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, profile] = await Promise.all([params, requireCustomer()]);
+export default async function CustomerClaimPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ submitted?: string }>;
+}) {
+  const [{ id }, query, profile] = await Promise.all([params, searchParams, requireCustomer()]);
   const { claim, error } = await getCustomerClaimDetails(profile.id, id);
   if (!claim && !error) notFound();
   if (!claim) return <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6"><Alert tone="error">{error || "Unable to load this claim."}</Alert></main>;
@@ -19,6 +26,7 @@ export default async function CustomerClaimPage({ params }: { params: Promise<{ 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-12">
       <Link href="/dashboard" className="text-sm font-semibold text-[var(--brand-teal)] hover:text-[var(--brand-teal-deep)]">← Back to dashboard</Link>
+      {query.submitted === "1" ? <CustomerClaimSubmissionSuccess /> : null}
       <Card className="mt-5">
         <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-slate-500">Motor claim</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--brand-navy)]">{claim.claim_number}</h1></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{statusLabel(claim.status)}</span></div>
 
