@@ -116,7 +116,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                     <td className="px-4 py-4">{claim.policyNumber}</td>
                     <td className="px-4 py-4">{formatDate(claim.accidentDate)}</td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
+                      <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
                     </td>
                     <td className="px-4 py-4"><ClaimActivity claim={claim} /></td>
                     <td className="px-4 py-4"><Link href={`/admin/claims/${claim.id}`} className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>{claim.status.toUpperCase() === "SUBMITTED" ? "Review" : "View"}</Link></td>
@@ -131,7 +131,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
               <Card key={claim.id} className="space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div><p className="font-semibold text-[var(--brand-navy)]">{claim.claimNumber}</p><p className="mt-1 text-sm text-slate-600">{claim.customerName}</p></div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
+                  <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
                 </div>
                 <dl className="grid gap-2 text-sm sm:grid-cols-2"><div><dt className="text-xs text-slate-500">Vehicle</dt><dd>{claim.vehicleLabel}</dd></div><div><dt className="text-xs text-slate-500">Policy</dt><dd>{claim.policyNumber}</dd></div></dl>
                 <div>

@@ -2,7 +2,6 @@ import type { ClaimHistoryAction, ClaimStatus, UserRole } from "@/types/database
 
 export type OfficerClaimAction =
   | "start_review"
-  | "return_to_new"
   | "request_more_info"
   | "approve"
   | "reject"
@@ -15,7 +14,6 @@ export type ClaimTransition = {
 
 const OFFICER_TRANSITIONS: Record<OfficerClaimAction, ClaimTransition> = {
   start_review: { toStatus: "UNDER_REVIEW", historyAction: "REVIEW_STARTED" },
-  return_to_new: { toStatus: "SUBMITTED", historyAction: "REVIEW_RETURNED" },
   request_more_info: { toStatus: "MORE_INFO_REQUIRED", historyAction: "MORE_INFO_REQUESTED" },
   approve: { toStatus: "APPROVED", historyAction: "CLAIM_APPROVED" },
   reject: { toStatus: "REJECTED", historyAction: "CLAIM_REJECTED" },
@@ -24,7 +22,6 @@ const OFFICER_TRANSITIONS: Record<OfficerClaimAction, ClaimTransition> = {
 
 const VALID_FROM: Record<OfficerClaimAction, ReadonlySet<ClaimStatus>> = {
   start_review: new Set(["SUBMITTED"]),
-  return_to_new: new Set(["UNDER_REVIEW"]),
   request_more_info: new Set(["UNDER_REVIEW"]),
   approve: new Set(["UNDER_REVIEW"]),
   reject: new Set(["UNDER_REVIEW"]),

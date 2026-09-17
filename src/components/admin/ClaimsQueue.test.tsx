@@ -65,4 +65,30 @@ describe("ClaimsQueue", () => {
     expect(within(rows[0]).getByRole("link", { name: "Review" }).getAttribute("href")).toBe("/admin/claims/1");
     expect(within(rows[1]).getByRole("link", { name: "View" }).getAttribute("href")).toBe("/admin/claims/2");
   });
+
+  it("keeps every lifecycle status badge on one line", () => {
+    const statuses = [
+      ["SUBMITTED", "New"],
+      ["UNDER_REVIEW", "Under Review"],
+      ["MORE_INFO_REQUIRED", "Waiting on Customer"],
+      ["APPROVED", "Approved"],
+      ["REJECTED", "Rejected"],
+      ["CLOSED", "Closed"],
+    ] as const;
+    render(
+      <ClaimsQueue
+        claims={statuses.map(([status], index) => ({
+          ...claims[0],
+          id: `status-${index}`,
+          claimNumber: `CLM-STATUS-${index}`,
+          status,
+        }))}
+      />,
+    );
+
+    const table = screen.getByRole("table");
+    for (const [, label] of statuses) {
+      expect(within(table).getByText(label).className).toContain("whitespace-nowrap");
+    }
+  });
 });

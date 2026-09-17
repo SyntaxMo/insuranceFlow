@@ -50,16 +50,11 @@ describe("officer claim transition route", () => {
     expect(runOfficerClaimActionMock).not.toHaveBeenCalled();
   });
 
-  it("accepts the audited Return to New action for server-side validation", async () => {
+  it("rejects the retired Return to New application action", async () => {
     const response = await POST(request({ action: "return_to_new" }), {
       params: Promise.resolve({ id: "claim-1" }),
     });
-    expect(response.status).toBe(200);
-    expect(runOfficerClaimActionMock).toHaveBeenCalledWith({
-      claimId: "claim-1",
-      action: "return_to_new",
-      note: undefined,
-      staff: expect.objectContaining({ id: "officer-1" }),
-    });
+    expect(response.status).toBe(400);
+    expect(runOfficerClaimActionMock).not.toHaveBeenCalled();
   });
 });

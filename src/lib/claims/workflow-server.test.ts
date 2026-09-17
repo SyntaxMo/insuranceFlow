@@ -40,21 +40,6 @@ describe("server claim workflow", () => {
     }));
   });
 
-  it("returns an under-review claim to New through the atomic audited RPC", async () => {
-    const claims = terminal({ data: { status: "UNDER_REVIEW" }, error: null });
-    const rpc = vi.fn().mockResolvedValue({ data: [{ new_status: "SUBMITTED" }], error: null });
-    const client = { from: vi.fn(() => claims), rpc } as unknown as SupabaseClient;
-    const result = await runOfficerClaimAction({ claimId: "claim-1", action: "return_to_new", note: null, staff: officer, supabase: client });
-    expect(result).toEqual({ ok: true });
-    expect(rpc).toHaveBeenCalledWith("transition_claim_status", expect.objectContaining({
-      p_claim_id: "claim-1",
-      p_to_status: "SUBMITTED",
-      p_action: "REVIEW_RETURNED",
-      p_note: null,
-      p_actor_user_id: "officer-1",
-    }));
-  });
-
   it("rejects a non-staff actor before reading or mutating the claim", async () => {
     const client = { from: vi.fn(), rpc: vi.fn() } as unknown as SupabaseClient;
     const result = await runOfficerClaimAction({
@@ -77,6 +62,16 @@ describe("server claim workflow", () => {
     const rpc = vi.fn();
     const client = { from: vi.fn(() => claims), rpc } as unknown as SupabaseClient;
     const result = await runOfficerClaimAction({ claimId: "claim-1", action: "reject", note: "Reason", staff: officer, supabase: client });
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/current status/i);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects a stale Start review before creating duplicate history", async () => {
+    const claims = terminal({ data: { status: "UNDER_REVIEW" }, error: null });
+    const rpc = vi.fn();
+    const client = { from: vi.fn(() => claims), rpc } as unknown as SupabaseClient;
+    const result = await runOfficerClaimAction({ claimId: "claim-1", action: "start_review", note: null, staff: officer, supabase: client });
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/current status/i);
     expect(rpc).not.toHaveBeenCalled();

@@ -9,7 +9,6 @@ import {
 describe("claim workflow", () => {
   it.each([
     ["SUBMITTED", "start_review"],
-    ["UNDER_REVIEW", "return_to_new"],
     ["UNDER_REVIEW", "request_more_info"],
     ["UNDER_REVIEW", "approve"],
     ["UNDER_REVIEW", "reject"],
@@ -23,17 +22,12 @@ describe("claim workflow", () => {
     ["SUBMITTED", "approve"],
     ["REJECTED", "approve"],
     ["UNDER_REVIEW", "close"],
-    ["SUBMITTED", "return_to_new"],
-    ["MORE_INFO_REQUIRED", "return_to_new"],
-    ["APPROVED", "return_to_new"],
-    ["REJECTED", "return_to_new"],
   ] as const)("rejects %s via %s", (status, action) => {
     expect(canRunOfficerAction(status, action)).toBe(false);
   });
 
   it.each([
     "start_review",
-    "return_to_new",
     "request_more_info",
     "approve",
     "reject",
@@ -49,11 +43,7 @@ describe("claim workflow", () => {
     });
   });
 
-  it("maps Return to New to the audited review-return transition", () => {
-    expect(transitionForOfficerAction("return_to_new")).toEqual({
-      toStatus: "SUBMITTED",
-      historyAction: "REVIEW_RETURNED",
-    });
+  it("retains the historical Return to New audit label", () => {
     expect(historyActionLabel("REVIEW_RETURNED")).toBe("Returned to New");
   });
 
