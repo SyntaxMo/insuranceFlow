@@ -16,6 +16,33 @@ const FILTERS = [
   ["CLOSED", "Closed"],
 ] as const;
 
+function ClaimActivity({ claim }: { claim: ClaimListItem }) {
+  const hasActivity = claim.hasAiAnalysis || claim.customerResponded;
+
+  if (!hasActivity) {
+    return (
+      <span className="text-sm text-slate-400" aria-label="No secondary activity">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5" aria-label="Claim activity">
+      {claim.hasAiAnalysis ? (
+        <span className="inline-flex rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-medium text-teal-700 ring-1 ring-inset ring-teal-100">
+          AI review ready
+        </span>
+      ) : null}
+      {claim.customerResponded ? (
+        <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700 ring-1 ring-inset ring-sky-100">
+          Customer responded
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number][0]>("ALL");
   const [search, setSearch] = useState("");
@@ -66,8 +93,8 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
         <Card><p className="text-sm text-slate-600">No claims match this view.</p></Card>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
+            <table className="min-w-[980px] divide-y divide-slate-200 text-left text-sm xl:min-w-full">
               <thead className="bg-slate-50/80 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Claim</th>
@@ -76,6 +103,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                   <th className="px-4 py-3 font-semibold">Policy</th>
                   <th className="px-4 py-3 font-semibold">Accident</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Activity</th>
                   <th className="px-4 py-3 font-semibold">Review</th>
                 </tr>
               </thead>
@@ -89,11 +117,8 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                     <td className="px-4 py-4">{formatDate(claim.accidentDate)}</td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {claim.hasAiAnalysis ? <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-medium text-teal-700">AI review ready</span> : null}
-                        {claim.customerResponded && claim.status.toUpperCase() === "UNDER_REVIEW" ? <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">Customer responded</span> : null}
-                      </div>
                     </td>
+                    <td className="px-4 py-4"><ClaimActivity claim={claim} /></td>
                     <td className="px-4 py-4"><Link href={`/admin/claims/${claim.id}`} className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>{claim.status.toUpperCase() === "SUBMITTED" ? "Review" : "View"}</Link></td>
                   </tr>
                 ))}
@@ -109,7 +134,10 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
                 </div>
                 <dl className="grid gap-2 text-sm sm:grid-cols-2"><div><dt className="text-xs text-slate-500">Vehicle</dt><dd>{claim.vehicleLabel}</dd></div><div><dt className="text-xs text-slate-500">Policy</dt><dd>{claim.policyNumber}</dd></div></dl>
-                {claim.customerResponded && claim.status.toUpperCase() === "UNDER_REVIEW" ? <p className="text-xs font-semibold text-sky-700">Customer responded</p> : null}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-slate-500">Activity</p>
+                  <ClaimActivity claim={claim} />
+                </div>
                 <Link href={`/admin/claims/${claim.id}`} className={buttonClassName("secondary", "w-full sm:w-auto")}>View claim</Link>
               </Card>
             ))}
