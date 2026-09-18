@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
 import { BrandLockup } from "@/components/brand/Brand";
+import { CustomerAccountMenu } from "@/components/layout/CustomerAccountMenu";
 import { buttonClassName } from "@/components/ui/Forms";
 import { getAuthenticatedProfile, isStaffRole } from "@/lib/auth/session";
 
@@ -16,8 +17,8 @@ export async function SiteHeader() {
         </Link>
         <nav aria-label="Primary navigation" className="flex min-w-0 items-center gap-2 sm:gap-3">
           {!profile ? <div className="mr-2 hidden items-center gap-4 lg:flex xl:gap-5"><Link href="/#coverage" className={navLinkClass}>Insurance</Link><Link href="/#how-it-works" className={navLinkClass}>How it works</Link><Link href="/#claims" className={navLinkClass}>Claims</Link><Link href="/#ai" className={navLinkClass}>AI</Link><Link href="/#help" className={navLinkClass}>Help</Link></div> : null}
-          {profile?.role === "CUSTOMER" ? <><Link href="/dashboard" className={navLinkClass}>Dashboard</Link><Link href="/claim" className={`${navLinkClass} hidden min-[420px]:inline-flex`}>New Claim</Link></> : profile && isStaffRole(profile.role) ? <Link href="/admin/claims" className={navLinkClass}>Claims</Link> : <><Link href="/login" className={navLinkClass}>Sign in</Link><Link href="/signup" className={buttonClassName("primary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Create account</Link></>}
-          {profile ? <form action={signOutAction}><button type="submit" className={buttonClassName("secondary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Sign Out</button></form> : null}
+          {profile?.role === "CUSTOMER" ? <><Link href="/dashboard" className={navLinkClass}>Dashboard</Link><Link href="/claim" className={`${navLinkClass} hidden min-[420px]:inline-flex`}>New Claim</Link><CustomerAccountMenu customerName={profile.full_name} customerEmail={profile.email} /></> : profile && isStaffRole(profile.role) ? <Link href="/admin/claims" className={navLinkClass}>Claims</Link> : <><Link href="/login" className={navLinkClass}>Sign in</Link><Link href="/signup" className={buttonClassName("primary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Create account</Link></>}
+          {profile && isStaffRole(profile.role) ? <form action={signOutAction}><button type="submit" className={buttonClassName("secondary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Sign Out</button></form> : null}
         </nav>
       </div>
     </header>

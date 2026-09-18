@@ -10,11 +10,43 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import {
+  summarizeCustomerAccount,
   getEligibleCustomerClaimPolicies,
   getCustomerDashboard,
   getCustomerClaimDetails,
   getCustomerPolicyDetails,
 } from "@/lib/claims/customer";
+
+describe("summarizeCustomerAccount", () => {
+  it("deduplicates policy access and uses the dashboard's existing open-claim semantics", () => {
+    const direct = { ...policy("policy-1", "POL-1", "Toyota"), accessType: "DIRECT" as const };
+    const duplicateLink = { ...direct, accessType: "LINKED" as const };
+    const inactive = {
+      ...policy("policy-2", "POL-2", "Nissan"),
+      status: "INACTIVE",
+      accessType: "DIRECT" as const,
+    };
+    const claimBase = {
+      policy_id: "policy-1",
+      accident_date: "2026-09-01",
+      created_at: "2026-09-02T10:00:00Z",
+      vehicle: null,
+    };
+    const claims = [
+      { ...claimBase, id: "claim-1", claim_number: "CLM-1", status: "UNDER_REVIEW" },
+      { ...claimBase, id: "claim-1", claim_number: "CLM-1", status: "UNDER_REVIEW" },
+      { ...claimBase, id: "claim-2", claim_number: "CLM-2", status: "APPROVED" },
+      { ...claimBase, id: "claim-3", claim_number: "CLM-3", status: "REJECTED" },
+      { ...claimBase, id: "claim-4", claim_number: "CLM-4", status: "CLOSED" },
+    ];
+
+    expect(summarizeCustomerAccount([direct, duplicateLink, inactive], claims)).toEqual({
+      activePolicies: 1,
+      openClaims: 2,
+      totalClaims: 4,
+    });
+  });
+});
 
 function policy(id: string, number: string, make: string) {
   return {

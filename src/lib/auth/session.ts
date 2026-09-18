@@ -6,11 +6,17 @@ import type { User, UserRole } from "@/types/database";
 
 export type AuthProfile = Pick<
   User,
-  "id" | "full_name" | "email" | "phone" | "role" | "auth_user_id"
+  | "id"
+  | "full_name"
+  | "email"
+  | "phone"
+  | "role"
+  | "auth_user_id"
+  | "created_at"
 >;
 
 const PROFILE_COLUMNS =
-  "id, full_name, email, phone, role, auth_user_id" as const;
+  "id, full_name, email, phone, role, auth_user_id, created_at" as const;
 
 export function isStaffRole(role: UserRole): boolean {
   return role === "CLAIMS_OFFICER" || role === "ADMIN";

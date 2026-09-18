@@ -51,6 +51,29 @@ export type CustomerClaimDetail = CustomerClaim & Pick<
   rejectionReason: string | null;
 };
 
+export type CustomerAccountSummary = {
+  activePolicies: number;
+  openClaims: number;
+  totalClaims: number;
+};
+
+export function summarizeCustomerAccount(
+  policies: CustomerPolicy[],
+  claims: CustomerClaim[],
+): CustomerAccountSummary {
+  const uniquePolicies = [...new Map(policies.map((policy) => [policy.id, policy])).values()];
+  const uniqueClaims = [...new Map(claims.map((claim) => [claim.id, claim])).values()];
+  return {
+    activePolicies: uniquePolicies.filter(
+      (policy) => policy.status.toUpperCase() === "ACTIVE",
+    ).length,
+    openClaims: uniqueClaims.filter(
+      (claim) => !["REJECTED", "CLOSED"].includes(claim.status.toUpperCase()),
+    ).length,
+    totalClaims: uniqueClaims.length,
+  };
+}
+
 function oneVehicle(
   value: CustomerVehicle | CustomerVehicle[] | null | undefined,
 ): CustomerVehicle | null {
@@ -171,6 +194,18 @@ export async function getCustomerDashboard(userId: string): Promise<{
         ),
       }),
     ),
+    error: null,
+  };
+}
+
+export async function getCustomerAccountSummary(userId: string): Promise<{
+  summary: CustomerAccountSummary | null;
+  error: string | null;
+}> {
+  const dashboard = await getCustomerDashboard(userId);
+  if (dashboard.error) return { summary: null, error: dashboard.error };
+  return {
+    summary: summarizeCustomerAccount(dashboard.policies, dashboard.claims),
     error: null,
   };
 }

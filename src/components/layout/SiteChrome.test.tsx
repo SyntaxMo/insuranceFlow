@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getAuthenticatedProfileMock } = vi.hoisted(() => ({ getAuthenticatedProfileMock: vi.fn() }));
@@ -36,10 +37,27 @@ describe("shared branded chrome", () => {
   });
 
   it("preserves authenticated customer navigation", async () => {
-    getAuthenticatedProfileMock.mockResolvedValue({ role: "CUSTOMER" });
+    const user = userEvent.setup();
+    getAuthenticatedProfileMock.mockResolvedValue({
+      role: "CUSTOMER",
+      full_name: "Mohammed Essam",
+      email: "mohammed@example.com",
+    });
     render(await SiteHeader());
     expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/dashboard");
     expect(screen.getByRole("link", { name: "New Claim" }).getAttribute("href")).toBe("/claim");
+    expect(screen.queryByRole("button", { name: "Sign Out" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Account menu" }));
+    expect(screen.getByRole("menuitem", { name: "Profile" }).getAttribute("href")).toBe("/dashboard/profile");
+    expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "Dashboard" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/dashboard");
+  });
+
+  it("does not show the customer account menu in staff navigation", async () => {
+    getAuthenticatedProfileMock.mockResolvedValue({ role: "CLAIMS_OFFICER" });
+    render(await SiteHeader());
+    expect(screen.queryByRole("button", { name: "Account menu" })).toBeNull();
     expect(screen.getByRole("button", { name: "Sign Out" })).toBeTruthy();
   });
 
