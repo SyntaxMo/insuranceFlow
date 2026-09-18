@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { VerifiedPolicySummary } from "@/types/database";
+import Link from "next/link";
+import type { ClaimPolicyOption, VerifiedPolicySummary } from "@/types/database";
 import {
   isAccidentFormValid,
   validateAccidentForm,
@@ -10,7 +11,14 @@ import {
   validateFile,
   type AccidentFormInput,
 } from "@/lib/validation/claim";
-import { formatCoverageType, formatCurrency, formatDate } from "@/lib/format";
+import {
+  formatCoverageType,
+  formatCurrency,
+  formatDate,
+  formatVehicleName,
+  statusLabel,
+  statusTone,
+} from "@/lib/format";
 import {
   Alert,
   Button,
@@ -18,6 +26,7 @@ import {
   Field,
   TextArea,
   TextInput,
+  buttonClassName,
 } from "@/components/ui/Forms";
 
 type Step = 1 | 2 | 3 | 4;
@@ -114,6 +123,80 @@ function PolicySummary({ policy }: { policy: VerifiedPolicySummary }) {
   );
 }
 
+function PolicyChoiceCard({
+  policy,
+  selected,
+  onSelect,
+}: {
+  policy: ClaimPolicyOption;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const vehicle = `${formatVehicleName(policy.vehicle.make, policy.vehicle.model)} (${policy.vehicle.year})`;
+  return (
+    <label
+      className={`relative block cursor-pointer rounded-2xl border p-4 transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--brand-teal)] sm:p-5 ${
+        selected
+          ? "border-[var(--brand-teal)] bg-teal-50/55 shadow-[0_10px_30px_-24px_rgba(13,148,136,0.8)]"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
+      }`}
+    >
+      <input
+        type="radio"
+        name="claimPolicy"
+        value={policy.policyId}
+        checked={selected}
+        onChange={onSelect}
+        className="sr-only"
+        aria-label={`${policy.policyNumber}, ${vehicle}, plate ${policy.vehicle.plateNumber}`}
+      />
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
+            selected
+              ? "border-[var(--brand-teal)] bg-[var(--brand-teal)]"
+              : "border-slate-300 bg-white"
+          }`}
+          aria-hidden="true"
+        >
+          {selected ? <span className="size-1.5 rounded-full bg-white" /> : null}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="font-semibold text-[var(--brand-navy)]">{policy.policyNumber}</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">{vehicle}</p>
+            </div>
+            <span
+              className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(policy.status)}`}
+            >
+              {statusLabel(policy.status)}
+            </span>
+          </div>
+          <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs text-slate-600 min-[430px]:grid-cols-2">
+            <div><dt className="inline text-slate-500">Plate </dt><dd className="inline font-medium text-slate-700">{policy.vehicle.plateNumber}</dd></div>
+            <div><dt className="inline text-slate-500">Coverage </dt><dd className="inline font-medium text-slate-700">{formatCoverageType(policy.coverageType)}</dd></div>
+            <div className="min-[430px]:col-span-2"><dt className="inline text-slate-500">Policy period </dt><dd className="inline font-medium text-slate-700">{formatDate(policy.startDate)} – {formatDate(policy.endDate)}</dd></div>
+          </dl>
+        </div>
+      </div>
+    </label>
+  );
+}
+
+function PolicyContext({ policy }: { policy: ClaimPolicyOption }) {
+  return (
+    <div className="rounded-xl border border-teal-100 bg-teal-50/45 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--brand-teal)]">Claiming under</p>
+      <div className="mt-1 flex flex-col gap-0.5 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
+        <span className="font-semibold text-[var(--brand-navy)]">{policy.policyNumber}</span>
+        <span className="text-slate-600">{formatVehicleName(policy.vehicle.make, policy.vehicle.model)} ({policy.vehicle.year})</span>
+        <span className="text-slate-500">Plate {policy.vehicle.plateNumber}</span>
+      </div>
+    </div>
+  );
+}
+
 function filePreviewUrl(file: File): string | null {
   if (!file.type.startsWith("image/")) return null;
   return URL.createObjectURL(file);
@@ -122,16 +205,21 @@ function filePreviewUrl(file: File): string | null {
 export function ClaimWizard({
   initialEmail,
   initialPhone,
+  policies,
+  policyLoadError,
 }: {
   initialEmail: string;
   initialPhone: string;
+  policies: ClaimPolicyOption[];
+  policyLoadError: string | null;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
-  const [policyNumber, setPolicyNumber] = useState("");
-  const [policy, setPolicy] = useState<VerifiedPolicySummary | null>(null);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(
+    policies.length === 1 ? policies[0].policyId : null,
+  );
   const [policyError, setPolicyError] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
+  const policy = policies.find((item) => item.policyId === selectedPolicyId) ?? null;
 
   const [accident, setAccident] = useState<AccidentFormInput>({
     accidentDate: "",
@@ -167,41 +255,9 @@ export function ClaimWizard({
     [files.accidentPhotos],
   );
 
-  async function handleVerifyPolicy() {
-    setPolicyError(null);
-    setPolicy(null);
-    setVerifying(true);
-
-    try {
-      const response = await fetch("/api/policies/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ policyNumber }),
-      });
-      const payload = (await response.json()) as {
-        ok: boolean;
-        policy?: VerifiedPolicySummary;
-        error?: string;
-      };
-
-      if (!payload.ok || !payload.policy) {
-        setPolicyError(payload.error || "Unable to verify this policy.");
-        return;
-      }
-
-      setPolicy(payload.policy);
-    } catch {
-      setPolicyError(
-        "We could not verify this policy right now. Please try again shortly.",
-      );
-    } finally {
-      setVerifying(false);
-    }
-  }
-
   function goToAccident() {
     if (!policy) {
-      setPolicyError("Verify a valid policy before continuing.");
+      setPolicyError("Choose a policy to continue.");
       return;
     }
     setStep(2);
@@ -291,7 +347,7 @@ export function ClaimWizard({
 
     try {
       const formData = new FormData();
-      formData.set("policyNumber", policy.policyNumber);
+      formData.set("policyId", policy.policyId);
       formData.set("accidentDate", accident.accidentDate);
       formData.set("accidentLocation", accident.accidentLocation);
       formData.set("description", accident.description);
@@ -343,53 +399,52 @@ export function ClaimWizard({
         <Card className="space-y-5">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
-              Policy verification
+              Choose a policy
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Enter your motor policy number to confirm coverage before filing a
-              claim.
+              Select the motor policy related to this claim.
             </p>
           </div>
 
-          <Field
-            label="Policy number"
-            htmlFor="policyNumber"
-            hint="Enter a policy linked to your customer account."
-          >
-            <TextInput
-              id="policyNumber"
-              name="policyNumber"
-              value={policyNumber}
-              onChange={(e) => setPolicyNumber(e.target.value.toUpperCase())}
-              placeholder="MOT-2026-0001"
-              autoComplete="off"
-            />
-          </Field>
+          {policyLoadError ? <Alert tone="error">{policyLoadError}</Alert> : null}
 
-          {policyError ? <Alert tone="error">{policyError}</Alert> : null}
-
-          {policy ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
-              <p className="mb-3 text-sm font-semibold text-emerald-800">
-                Policy verified and active
-              </p>
-              <PolicySummary policy={policy} />
+          {!policyLoadError && policies.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-5 py-7 text-center">
+              <h3 className="text-lg font-semibold text-[var(--brand-navy)]">No eligible policies found</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">You need an active motor policy before you can submit a claim.</p>
+              <div className="mt-5 flex flex-col justify-center gap-2.5 sm:flex-row">
+                <Link href="/dashboard/policies/link" className={buttonClassName("secondary")}>Link a policy</Link>
+                <Link href="/dashboard/policies/new" className={buttonClassName("primary")}>Get a policy</Link>
+              </div>
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleVerifyPolicy}
-              disabled={verifying || !policyNumber.trim()}
-            >
-              {verifying ? "Verifying…" : "Verify Policy"}
-            </Button>
-            <Button type="button" onClick={goToAccident} disabled={!policy}>
+          {policies.length > 0 ? (
+            <fieldset>
+              <legend className="sr-only">Eligible motor policies</legend>
+              <div className="grid gap-3">
+                {policies.map((item) => (
+                  <PolicyChoiceCard
+                    key={item.policyId}
+                    policy={item}
+                    selected={item.policyId === selectedPolicyId}
+                    onSelect={() => {
+                      setSelectedPolicyId(item.policyId);
+                      setPolicyError(null);
+                    }}
+                  />
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
+          {policyError ? <Alert tone="error">{policyError}</Alert> : null}
+
+          {policies.length > 0 ? <div className="flex justify-end">
+            <Button type="button" onClick={goToAccident}>
               Continue
             </Button>
-          </div>
+          </div> : null}
         </Card>
       )}
 
@@ -404,6 +459,8 @@ export function ClaimWizard({
               you.
             </p>
           </div>
+
+          {policy ? <PolicyContext policy={policy} /> : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -508,6 +565,8 @@ export function ClaimWizard({
               Upload PDF or image files (JPEG, PNG, WEBP). Max 10 MB each.
             </p>
           </div>
+
+          {policy ? <PolicyContext policy={policy} /> : null}
 
           <Field
             label="Police report (optional)"

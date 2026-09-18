@@ -7,7 +7,7 @@ import {
   type AccidentFormInput,
 } from "@/lib/validation/claim";
 import { createUniqueClaimNumber } from "@/lib/claims/numbers";
-import { verifyPolicyByNumber } from "@/lib/claims/policy";
+import { verifyPolicyById } from "@/lib/claims/policy";
 import {
   createServiceRoleClient,
   getStorageBucket,
@@ -109,7 +109,7 @@ export async function submitClaim(
   formData: FormData,
   customer: AuthProfile,
 ): Promise<SubmitClaimResult> {
-  const policyNumber = String(formData.get("policyNumber") || "").trim();
+  const policyId = String(formData.get("policyId") || "").trim();
   const accident: AccidentFormInput = {
     accidentDate: String(formData.get("accidentDate") || "").trim(),
     accidentLocation: String(formData.get("accidentLocation") || "").trim(),
@@ -118,8 +118,8 @@ export async function submitClaim(
     phone: customer.phone?.trim() || "",
   };
 
-  if (!policyNumber) {
-    return { ok: false, error: "Policy number is required." };
+  if (!policyId) {
+    return { ok: false, error: "Choose a policy before submitting your claim." };
   }
 
   if (!isAccidentFormValid(accident)) {
@@ -134,7 +134,7 @@ export async function submitClaim(
     return { ok: false, error: documentError };
   }
 
-  const verification = await verifyPolicyByNumber(policyNumber, customer.id);
+  const verification = await verifyPolicyById(policyId, customer.id);
   if (!verification.ok) {
     return { ok: false, error: verification.error };
   }

@@ -10,6 +10,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import {
+  getEligibleCustomerClaimPolicies,
   getCustomerDashboard,
   getCustomerClaimDetails,
   getCustomerPolicyDetails,
@@ -21,11 +22,12 @@ function policy(id: string, number: string, make: string) {
     policy_number: number,
     status: "ACTIVE",
     coverage_type: "Comprehensive",
-    start_date: "2026-01-01",
-    end_date: "2026-12-31",
+    start_date: "2020-01-01",
+    end_date: "2099-12-31",
     excess_amount: 250,
     coverage_limit: 20000,
     vehicles: {
+      id: `${id}-vehicle`,
       make,
       model: "Model",
       year: 2024,
@@ -127,6 +129,52 @@ describe("getCustomerDashboard", () => {
 
     expect(from).toHaveBeenCalledTimes(2);
     expect(result).toEqual({ policies: [], claims: [], error: null });
+  });
+});
+
+describe("getEligibleCustomerClaimPolicies", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("combines direct and linked active policies and removes duplicate access paths", async () => {
+    const links = eqResult({
+      data: [{ policy_id: "policy-1" }, { policy_id: "policy-2" }],
+      error: null,
+    });
+    const direct = orderedEqResult({
+      data: [policy("policy-1", "POL-1", "Toyota")],
+      error: null,
+    });
+    const linked = orderedInResult({
+      data: [
+        policy("policy-1", "POL-1", "Toyota"),
+        policy("policy-2", "POL-2", "Nissan"),
+      ],
+      error: null,
+    });
+    createServiceRoleClientMock.mockReturnValue({
+      from: vi.fn().mockReturnValueOnce(links).mockReturnValueOnce(direct).mockReturnValueOnce(linked),
+    });
+
+    const result = await getEligibleCustomerClaimPolicies("portal-user-id");
+
+    expect(result.error).toBeNull();
+    expect(result.policies.map((item) => item.policyId)).toEqual(["policy-1", "policy-2"]);
+    expect(result.policies.map((item) => item.accessType)).toEqual(["DIRECT", "LINKED"]);
+  });
+
+  it("uses the existing eligibility rules to omit inactive policies", async () => {
+    const links = eqResult({ data: [], error: null });
+    const direct = orderedEqResult({
+      data: [{ ...policy("policy-1", "POL-1", "Toyota"), status: "INACTIVE" }],
+      error: null,
+    });
+    createServiceRoleClientMock.mockReturnValue({
+      from: vi.fn().mockReturnValueOnce(links).mockReturnValueOnce(direct),
+    });
+
+    const result = await getEligibleCustomerClaimPolicies("portal-user-id");
+
+    expect(result).toEqual({ policies: [], error: null });
   });
 });
 

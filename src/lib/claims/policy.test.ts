@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createServiceRoleClient: createServiceRoleClientMock,
 }));
 
-import { verifyPolicyByNumber } from "@/lib/claims/policy";
+import { verifyPolicyById, verifyPolicyByNumber } from "@/lib/claims/policy";
 
 const activePolicy = {
   id: "policy-id",
@@ -33,9 +33,10 @@ const activePolicy = {
 };
 
 function policyQuery(data: typeof activePolicy | null) {
-  const query = { select: vi.fn(), ilike: vi.fn(), maybeSingle: vi.fn() };
+  const query = { select: vi.fn(), ilike: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
   query.select.mockReturnValue(query);
   query.ilike.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
   query.maybeSingle.mockResolvedValue({ data, error: null });
   return query;
 }
@@ -87,5 +88,42 @@ describe("verifyPolicyByNumber customer access", () => {
 
     expect(result.ok).toBe(true);
     expect(from).toHaveBeenCalledOnce();
+  });
+});
+
+describe("verifyPolicyById selected policy authorization", () => {
+  const selectedPolicyId = "11111111-1111-4111-8111-111111111111";
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it("accepts a directly owned selected policy", async () => {
+    const direct = { ...activePolicy, id: selectedPolicyId, user_id: "portal-user-id" };
+    const query = policyQuery(direct);
+    createServiceRoleClientMock.mockReturnValue({ from: vi.fn().mockReturnValue(query) });
+
+    const result = await verifyPolicyById(selectedPolicyId, "portal-user-id");
+
+    expect(query.ilike).not.toHaveBeenCalled();
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a manipulated policy ID owned by another customer", async () => {
+    const otherCustomerPolicy = { ...activePolicy, id: selectedPolicyId, user_id: "other-owner" };
+    createServiceRoleClientMock.mockReturnValue({
+      from: vi
+        .fn()
+        .mockReturnValueOnce(policyQuery(otherCustomerPolicy))
+        .mockReturnValueOnce(linkQuery(null)),
+    });
+
+    const result = await verifyPolicyById(selectedPolicyId, "portal-user-id");
+
+    expect(result).toMatchObject({ ok: false, code: "NOT_FOUND" });
+  });
+
+  it("rejects an arbitrary non-UUID without querying the database", async () => {
+    const result = await verifyPolicyById("another-customer-policy", "portal-user-id");
+    expect(result).toMatchObject({ ok: false, code: "INVALID" });
+    expect(createServiceRoleClientMock).not.toHaveBeenCalled();
   });
 });

@@ -129,6 +129,11 @@ export interface VerifiedPolicySummary {
   };
 }
 
+export type ClaimPolicyOption = VerifiedPolicySummary & {
+  status: string;
+  accessType: "DIRECT" | "LINKED";
+};
+
 export interface ClaimListItem {
   id: string;
   claimNumber: string;

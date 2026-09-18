@@ -1,10 +1,12 @@
 import { ClaimWizard } from "@/components/claim/ClaimWizard";
 import { requireCustomer } from "@/lib/auth/session";
+import { getEligibleCustomerClaimPolicies } from "@/lib/claims/customer";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClaimPage() {
   const profile = await requireCustomer();
+  const { policies, error } = await getEligibleCustomerClaimPolicies(profile.id);
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-8">
@@ -15,13 +17,15 @@ export default async function ClaimPage() {
           Start your motor claim
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
-          Complete each step to verify your policy, describe the accident,
+          Complete each step to choose your policy, describe the accident,
           attach documents, and submit for review.
         </p>
       </div>
       <ClaimWizard
         initialEmail={profile.email || ""}
         initialPhone={profile.phone || ""}
+        policies={policies}
+        policyLoadError={error}
       />
     </div>
   );

@@ -2,8 +2,10 @@ import "server-only";
 
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { CUSTOMER_VISIBLE_HISTORY_ACTIONS } from "@/lib/claims/workflow";
+import { evaluatePolicyEligibility } from "@/lib/claims/policy-eligibility";
 import type {
   Claim,
+  ClaimPolicyOption,
   ClaimHistoryAction,
   ClaimStatusHistory,
   Policy,
@@ -12,7 +14,7 @@ import type {
 
 export type CustomerVehicle = Pick<
   Vehicle,
-  "make" | "model" | "year" | "plate_number" | "vin"
+  "id" | "make" | "model" | "year" | "plate_number" | "vin"
 >;
 
 export type CustomerPolicyAccess = "DIRECT" | "LINKED";
@@ -56,9 +58,8 @@ function oneVehicle(
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-export async function getCustomerDashboard(userId: string): Promise<{
+export async function getAccessibleCustomerPolicies(userId: string): Promise<{
   policies: CustomerPolicy[];
-  claims: CustomerClaim[];
   error: string | null;
 }> {
   const supabase = createServiceRoleClient();
@@ -69,18 +70,18 @@ export async function getCustomerDashboard(userId: string): Promise<{
 
   if (linkError) {
     console.error("Customer policy links read failed:", linkError.message);
-    return { policies: [], claims: [], error: "Unable to load your policies right now." };
+    return { policies: [], error: "Unable to load your policies right now." };
   }
 
   const { data: directPolicies, error: directPolicyError } = await supabase
     .from("policies")
-    .select(`*, vehicles (make, model, year, plate_number, vin)`)
+    .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (directPolicyError) {
     console.error("Customer policies read failed:", directPolicyError.message);
-    return { policies: [], claims: [], error: "Unable to load your policies right now." };
+    return { policies: [], error: "Unable to load your policies right now." };
   }
 
   const linkedPolicyIds = (links || []).map((link) => String(link.policy_id));
@@ -88,12 +89,12 @@ export async function getCustomerDashboard(userId: string): Promise<{
   if (linkedPolicyIds.length > 0) {
     const { data, error } = await supabase
       .from("policies")
-      .select(`*, vehicles (make, model, year, plate_number, vin)`)
+      .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
       .in("id", linkedPolicyIds)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Linked customer policies read failed:", error.message);
-      return { policies: [], claims: [], error: "Unable to load your policies right now." };
+      return { policies: [], error: "Unable to load your policies right now." };
     }
     linkedPolicies = (data || []).map((policy) => ({
       ...(policy as Omit<CustomerPolicy, "accessType">),
@@ -111,10 +112,44 @@ export async function getCustomerDashboard(userId: string): Promise<{
   for (const policy of linkedPolicies) {
     if (!policyMap.has(policy.id)) policyMap.set(policy.id, policy);
   }
-  const accessiblePolicies = [...policyMap.values()];
+
+  return { policies: [...policyMap.values()], error: null };
+}
+
+export async function getEligibleCustomerClaimPolicies(
+  userId: string,
+): Promise<{ policies: ClaimPolicyOption[]; error: string | null }> {
+  const accessible = await getAccessibleCustomerPolicies(userId);
+  if (accessible.error) return { policies: [], error: accessible.error };
+
+  const policies: ClaimPolicyOption[] = [];
+  for (const policy of accessible.policies) {
+    const eligibility = evaluatePolicyEligibility(policy);
+    if (!eligibility.ok) continue;
+    policies.push({
+      ...eligibility.policy,
+      status: policy.status,
+      accessType: policy.accessType,
+    });
+  }
+
+  return { policies, error: null };
+}
+
+export async function getCustomerDashboard(userId: string): Promise<{
+  policies: CustomerPolicy[];
+  claims: CustomerClaim[];
+  error: string | null;
+}> {
+  const accessible = await getAccessibleCustomerPolicies(userId);
+  if (accessible.error) {
+    return { policies: [], claims: [], error: accessible.error };
+  }
+  const accessiblePolicies = accessible.policies;
   const policyIds = accessiblePolicies.map((policy) => policy.id);
   if (policyIds.length === 0) return { policies: [], claims: [], error: null };
 
+  const supabase = createServiceRoleClient();
   const { data: claims, error: claimError } = await supabase
     .from("claims")
     .select("id, policy_id, claim_number, status, accident_date, created_at")
@@ -147,7 +182,7 @@ export async function getCustomerPolicyDetails(
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("policies")
-    .select(`*, vehicles (make, model, year, plate_number, vin)`)
+    .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
     .eq("id", policyId)
     .maybeSingle();
 

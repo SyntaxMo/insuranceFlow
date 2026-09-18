@@ -1,5 +1,22 @@
 import type { Policy, Vehicle, VerifiedPolicySummary } from "@/types/database";
 
+type PolicyVehicleSummary = Pick<
+  Vehicle,
+  "id" | "make" | "model" | "year" | "plate_number"
+>;
+
+type PolicyEligibilityInput = Pick<
+  Policy,
+  | "id"
+  | "policy_number"
+  | "status"
+  | "start_date"
+  | "end_date"
+  | "coverage_type"
+  | "excess_amount"
+  | "coverage_limit"
+> & { vehicles?: PolicyVehicleSummary | PolicyVehicleSummary[] | null };
+
 export type PolicyVerificationResult =
   | { ok: true; policy: VerifiedPolicySummary }
   | {
@@ -9,8 +26,8 @@ export type PolicyVerificationResult =
     };
 
 function asSingleVehicle(
-  vehicles: Vehicle | Vehicle[] | null | undefined,
-): Vehicle | null {
+  vehicles: PolicyVehicleSummary | PolicyVehicleSummary[] | null | undefined,
+): PolicyVehicleSummary | null {
   if (!vehicles) return null;
   return Array.isArray(vehicles) ? (vehicles[0] ?? null) : vehicles;
 }
@@ -25,7 +42,9 @@ function startOfToday(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-export function mapPolicyToSummary(policy: Policy): VerifiedPolicySummary | null {
+export function mapPolicyToSummary(
+  policy: PolicyEligibilityInput,
+): VerifiedPolicySummary | null {
   const vehicle = asSingleVehicle(policy.vehicles);
   if (!vehicle) return null;
 
@@ -48,7 +67,7 @@ export function mapPolicyToSummary(policy: Policy): VerifiedPolicySummary | null
 }
 
 export function evaluatePolicyEligibility(
-  policy: Policy,
+  policy: PolicyEligibilityInput,
 ): PolicyVerificationResult {
   const summary = mapPolicyToSummary(policy);
   if (!summary) {
