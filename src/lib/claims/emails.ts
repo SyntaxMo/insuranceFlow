@@ -61,8 +61,8 @@ function emailCopy(input: ClaimEmailInput) {
     };
   }
   return {
-    subject: `Update on claim ${input.claimNumber}`,
-    heading: "Your claim review has been updated",
+    subject: `Your claim ${input.claimNumber} has been rejected`,
+    heading: "Your claim has been rejected",
     body: "A Claims Officer rejected your claim in the InsureFlow demonstration workflow.",
     noteLabel: "Reason",
   };

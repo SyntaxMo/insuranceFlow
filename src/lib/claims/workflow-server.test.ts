@@ -38,6 +38,28 @@ describe("server claim workflow", () => {
       p_action: "REVIEW_STARTED",
       p_actor_user_id: "officer-1",
     }));
+    expect(sendClaimStatusEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("closes a decided claim without sending a customer email", async () => {
+    const claims = terminal({ data: { status: "APPROVED" }, error: null });
+    const rpc = vi.fn().mockResolvedValue({ data: [{ new_status: "CLOSED" }], error: null });
+    const client = { from: vi.fn(() => claims), rpc } as unknown as SupabaseClient;
+
+    const result = await runOfficerClaimAction({
+      claimId: "claim-1",
+      action: "close",
+      note: null,
+      staff: officer,
+      supabase: client,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(rpc).toHaveBeenCalledWith("transition_claim_status", expect.objectContaining({
+      p_to_status: "CLOSED",
+      p_action: "CLAIM_CLOSED",
+    }));
+    expect(sendClaimStatusEmailMock).not.toHaveBeenCalled();
   });
 
   it("rejects a non-staff actor before reading or mutating the claim", async () => {
@@ -154,6 +176,7 @@ describe("server claim workflow", () => {
       p_action: "CUSTOMER_INFO_SUBMITTED",
       p_actor_user_id: "customer-1",
     }));
+    expect(sendClaimStatusEmailMock).not.toHaveBeenCalled();
   });
 
   it("stores permitted additional evidence before returning the claim to review", async () => {

@@ -39,7 +39,7 @@ describe("claim status email", () => {
     expect(result.text).toContain("portfolio demonstration");
   });
 
-  it("derives the Resend payload server-side", async () => {
+  it("sends an explicit rejection email to the supplied customer recipient", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ id: "email-id" }), { status: 200 }),
     );
@@ -54,7 +54,11 @@ describe("claim status email", () => {
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body.from).toBe(CLAIM_EMAIL_SENDER);
     expect(body.to).toEqual(["customer@example.com"]);
-    expect(body.subject).toContain("CLM-2");
+    expect(body.subject).toBe("Your claim CLM-2 has been rejected");
+    expect(body.html).toContain("Your claim has been rejected");
+    expect(body.html).toContain("The submitted evidence does not support the claim.");
+    expect(body.text).toContain("Reason: The submitted evidence does not support the claim.");
+    expect(body.html).toContain("View claim");
     expect(body.html).toContain("portfolio demonstration");
   });
 
