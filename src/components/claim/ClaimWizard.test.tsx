@@ -102,6 +102,7 @@ describe("ClaimWizard saved policy selection", () => {
     expect(screen.getByText("Accident details")).toBeTruthy();
     expect(screen.getByText("Claiming under")).toBeTruthy();
     expect(screen.getByText("MOT-2026-LINKED")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect((screen.getByRole("radio", { name: /MOT-2026-LINKED/ }) as HTMLInputElement).checked).toBe(true);

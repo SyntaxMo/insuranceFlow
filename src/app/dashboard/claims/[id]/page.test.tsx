@@ -63,7 +63,8 @@ describe("CustomerClaimPage response success feedback", () => {
     }));
 
     expect(screen.getByRole("status").textContent).toContain("Information submitted successfully");
-    expect(screen.getByRole("link", { name: "← Back to dashboard" }).getAttribute("href")).toBe("/dashboard");
+    expect(screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href")).toBe("/dashboard");
+    expect(screen.queryByText("← Back to dashboard")).toBeNull();
     expect(screen.getByText(/^Under review$/i)).toBeTruthy();
     expect(screen.getByText("Customer submitted additional information")).toBeTruthy();
   });

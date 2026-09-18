@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
@@ -33,7 +34,8 @@ export default async function CustomerProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <header className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <BackToDashboardLink />
+      <header className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
         <ProfileAvatar />
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Account</p>

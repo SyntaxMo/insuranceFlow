@@ -42,6 +42,7 @@ describe("CustomerProfilePage", () => {
   it("renders the authenticated customer's persisted profile and account summary", async () => {
     render(await CustomerProfilePage());
 
+    expect(screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href")).toBe("/dashboard");
     expect(screen.getByRole("heading", { name: "Your profile" })).toBeTruthy();
     const avatar = screen.getByTestId("profile-page-avatar");
     expect(avatar.querySelector('[data-testid="default-profile-icon"]')).toBeTruthy();

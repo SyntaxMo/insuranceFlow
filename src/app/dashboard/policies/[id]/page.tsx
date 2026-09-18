@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
+import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
 import { getCustomerPolicyDetails } from "@/lib/claims/customer";
 import { formatCoverageType, formatCurrency, formatDate, statusLabel, statusTone } from "@/lib/format";
@@ -28,7 +29,8 @@ export default async function CustomerPolicyPage({
   if (!policy) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <Alert tone="error">{error || "Unable to load this policy."}</Alert>
+        <BackToDashboardLink />
+        <div className="mt-5"><Alert tone="error">{error || "Unable to load this policy."}</Alert></div>
       </main>
     );
   }
@@ -40,12 +42,7 @@ export default async function CustomerPolicyPage({
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-      <Link
-        href="/dashboard"
-        className={buttonClassName("secondary")}
-      >
-        ← Back to dashboard
-      </Link>
+      <BackToDashboardLink />
 
       <header className="mt-5 rounded-3xl bg-[var(--brand-navy)] px-5 py-7 text-white shadow-[0_24px_60px_-38px_rgba(15,23,42,0.75)] sm:px-8 sm:py-9">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

@@ -1,4 +1,5 @@
 import { ClaimWizard } from "@/components/claim/ClaimWizard";
+import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { requireCustomer } from "@/lib/auth/session";
 import { getEligibleCustomerClaimPolicies } from "@/lib/claims/customer";
 
@@ -9,7 +10,8 @@ export default async function ClaimPage() {
   const { policies, error } = await getEligibleCustomerClaimPolicies(profile.id);
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-      <div className="mb-8">
+      <BackToDashboardLink />
+      <div className="mb-8 mt-5">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">
           Claim intake
         </p>
