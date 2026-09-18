@@ -7,11 +7,13 @@ const mocks = vi.hoisted(() => ({
   createUniqueClaimNumber: vi.fn(),
   createServiceRoleClient: vi.fn(),
   getStorageBucket: vi.fn(() => "claim-documents"),
+  sendClaimSubmissionEmail: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/claims/policy", () => ({ verifyPolicyById: mocks.verifyPolicyById }));
 vi.mock("@/lib/claims/numbers", () => ({ createUniqueClaimNumber: mocks.createUniqueClaimNumber }));
+vi.mock("@/lib/claims/emails", () => ({ sendClaimSubmissionEmail: mocks.sendClaimSubmissionEmail }));
 vi.mock("@/lib/supabase/server", () => ({
   createServiceRoleClient: mocks.createServiceRoleClient,
   getStorageBucket: mocks.getStorageBucket,
@@ -52,6 +54,7 @@ describe("submitClaim selected policy flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createUniqueClaimNumber.mockResolvedValue("CLM-2026-ABC123");
+    mocks.sendClaimSubmissionEmail.mockResolvedValue(true);
     mocks.verifyPolicyById.mockResolvedValue({
       ok: true,
       policy: {
@@ -98,7 +101,109 @@ describe("submitClaim selected policy flow", () => {
     );
     expect(upload).toHaveBeenCalledTimes(2);
     expect(insert).toHaveBeenCalledTimes(2);
+    expect(mocks.sendClaimSubmissionEmail).toHaveBeenCalledTimes(1);
+    expect(mocks.sendClaimSubmissionEmail).toHaveBeenCalledWith(expect.objectContaining({
+      recipient: customer.email,
+      customerName: customer.full_name,
+      claimId: "claim-id",
+      claimNumber: "CLM-2026-ABC123",
+      vehicle: { make: "Toyota", model: "Corolla", year: 2026 },
+      accidentDate: "2026-09-01",
+    }));
     expect(result).toEqual({ ok: true, claimNumber: "CLM-2026-ABC123" });
+  });
+
+  it("derives the recipient from the authenticated profile, not browser form data", async () => {
+    const formData = validFormData();
+    formData.set("email", "attacker@example.com");
+    mocks.createServiceRoleClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: [{ claim_id: "claim-id", claim_number: "CLM-2026-ABC123" }],
+        error: null,
+      }),
+      storage: { from: vi.fn(() => ({ upload: vi.fn().mockResolvedValue({ error: null }), remove: vi.fn() })) },
+      from: vi.fn(() => ({ insert: vi.fn().mockResolvedValue({ error: null }), delete: vi.fn() })),
+    });
+
+    await submitClaim(formData, customer);
+
+    expect(mocks.sendClaimSubmissionEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ recipient: "customer@example.com" }),
+    );
+  });
+
+  it("keeps the created claim, history, and documents when email delivery fails", async () => {
+    const remove = vi.fn();
+    const deleteClaim = vi.fn();
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    mocks.sendClaimSubmissionEmail.mockResolvedValue(false);
+    mocks.createServiceRoleClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: [{ claim_id: "claim-id", claim_number: "CLM-2026-ABC123" }],
+        error: null,
+      }),
+      storage: { from: vi.fn(() => ({ upload: vi.fn().mockResolvedValue({ error: null }), remove })) },
+      from: vi.fn(() => ({ insert, delete: deleteClaim })),
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await submitClaim(validFormData(), customer);
+
+    expect(result).toEqual({ ok: true, claimNumber: "CLM-2026-ABC123" });
+    expect(insert).toHaveBeenCalledTimes(2);
+    expect(remove).not.toHaveBeenCalled();
+    expect(deleteClaim).not.toHaveBeenCalled();
+  });
+
+  it("still reports submission success if the email helper throws unexpectedly", async () => {
+    const remove = vi.fn();
+    const deleteClaim = vi.fn();
+    mocks.sendClaimSubmissionEmail.mockRejectedValue(new Error("provider unavailable"));
+    mocks.createServiceRoleClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: [{ claim_id: "claim-id", claim_number: "CLM-2026-ABC123" }],
+        error: null,
+      }),
+      storage: { from: vi.fn(() => ({ upload: vi.fn().mockResolvedValue({ error: null }), remove })) },
+      from: vi.fn(() => ({ insert: vi.fn().mockResolvedValue({ error: null }), delete: deleteClaim })),
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await expect(submitClaim(validFormData(), customer)).resolves.toEqual({
+      ok: true,
+      claimNumber: "CLM-2026-ABC123",
+    });
+    expect(remove).not.toHaveBeenCalled();
+    expect(deleteClaim).not.toHaveBeenCalled();
+  });
+
+  it("does not attempt email when the required document pipeline fails", async () => {
+    const deleteEq = vi.fn().mockResolvedValue({ error: null });
+    const deleteClaim = vi.fn(() => ({ eq: deleteEq }));
+    mocks.createServiceRoleClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: [{ claim_id: "claim-id", claim_number: "CLM-2026-ABC123" }],
+        error: null,
+      }),
+      storage: {
+        from: vi.fn(() => ({
+          upload: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        })),
+      },
+      from: vi.fn(() => ({
+        insert: vi.fn().mockResolvedValue({ error: { message: "metadata failed" } }),
+        delete: deleteClaim,
+      })),
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await submitClaim(validFormData(), customer);
+
+    expect(result.ok).toBe(false);
+    expect(mocks.sendClaimSubmissionEmail).not.toHaveBeenCalled();
+    expect(deleteClaim).toHaveBeenCalledTimes(1);
+    expect(deleteEq).toHaveBeenCalledWith("id", "claim-id");
   });
 
   it("stops before claim creation when server-side policy authorization fails", async () => {
@@ -115,5 +220,6 @@ describe("submitClaim selected policy flow", () => {
       error: "This policy is not available for your account.",
     });
     expect(mocks.createServiceRoleClient).not.toHaveBeenCalled();
+    expect(mocks.sendClaimSubmissionEmail).not.toHaveBeenCalled();
   });
 });

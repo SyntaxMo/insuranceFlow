@@ -7,6 +7,7 @@ import {
   type AccidentFormInput,
 } from "@/lib/validation/claim";
 import { createUniqueClaimNumber } from "@/lib/claims/numbers";
+import { sendClaimSubmissionEmail } from "@/lib/claims/emails";
 import { verifyPolicyById } from "@/lib/claims/policy";
 import {
   createServiceRoleClient,
@@ -210,6 +211,35 @@ export async function submitClaim(
           ? err.message
           : "We could not finish uploading your documents. Please try again.",
     };
+  }
+
+  let emailSent = false;
+  try {
+    emailSent = await sendClaimSubmissionEmail({
+      recipient: customer.email?.trim() || "",
+      customerName: customer.full_name,
+      claimId: claim.claim_id,
+      claimNumber: claim.claim_number,
+      vehicle: {
+        make: verification.policy.vehicle.make,
+        model: verification.policy.vehicle.model,
+        year: verification.policy.vehicle.year,
+      },
+      accidentDate: accident.accidentDate,
+      submittedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Claim submission confirmation email threw unexpectedly:", {
+      claimId: claim.claim_id,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
+
+  if (!emailSent) {
+    console.error("Claim submission confirmation email was not delivered:", {
+      claimId: claim.claim_id,
+      stage: "post_submission_notification",
+    });
   }
 
   return { ok: true, claimNumber: claim.claim_number };

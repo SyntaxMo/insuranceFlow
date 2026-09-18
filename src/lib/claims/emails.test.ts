@@ -4,7 +4,9 @@ vi.mock("server-only", () => ({}));
 
 import {
   buildClaimEmail,
+  buildClaimSubmissionEmail,
   CLAIM_EMAIL_SENDER,
+  sendClaimSubmissionEmail,
   sendClaimStatusEmail,
 } from "@/lib/claims/emails";
 
@@ -67,5 +69,54 @@ describe("claim status email", () => {
       claimNumber: "CLM-3",
       note: null,
     })).resolves.toBe(false);
+  });
+
+  it("builds a complete claim-submission confirmation", () => {
+    const result = buildClaimSubmissionEmail({
+      recipient: "customer@example.com",
+      customerName: "Mohammed Ali",
+      claimId: "claim-4",
+      claimNumber: "CLM-2026-2612",
+      vehicle: { make: "toyota", model: "corolla", year: 2026 },
+      accidentDate: "2026-09-01",
+      submittedAt: "2026-09-19T10:00:00.000Z",
+    });
+
+    expect(result.subject).toBe("We received your claim CLM-2026-2612");
+    expect(result.text).toContain("Hi Mohammed,");
+    expect(result.text).toContain("Claim number: CLM-2026-2612");
+    expect(result.text).toContain("Vehicle: Toyota Corolla (2026)");
+    expect(result.text).toContain("Accident date: Sep 1, 2026");
+    expect(result.text).toContain("Submitted date: Sep 19, 2026");
+    expect(result.text).toContain("Status: New");
+    expect(result.text).toContain("/dashboard/claims/claim-4");
+    expect(result.html).toContain("View claim");
+    expect(result.text).toContain("portfolio demonstration");
+  });
+
+  it("sends the claim-submission confirmation with the shared sender", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ id: "email-id" }), { status: 200 }),
+    );
+
+    await expect(sendClaimSubmissionEmail({
+      recipient: "profile@example.com",
+      customerName: "Customer",
+      claimId: "claim-5",
+      claimNumber: "CLM-2026-3000",
+      vehicle: { make: "Kia", model: "Sorento", year: 2025 },
+      accidentDate: "2026-09-05",
+      submittedAt: "2026-09-19T10:00:00.000Z",
+    })).resolves.toBe(true);
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.from).toBe(CLAIM_EMAIL_SENDER);
+    expect(body.to).toEqual(["profile@example.com"]);
+    expect(body.subject).toBe("We received your claim CLM-2026-3000");
+    expect(body.html).toContain("Kia Sorento (2025)");
+    expect(body.html).toContain("View claim");
+    expect(body.text).toContain("portfolio demonstration");
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get("Idempotency-Key"))
+      .toBe("claim-submitted/claim-5");
   });
 });
