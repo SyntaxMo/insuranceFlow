@@ -9,15 +9,20 @@ const navLinkClass = "rounded-lg px-1.5 py-2 text-sm font-medium text-slate-600 
 
 export async function SiteHeader() {
   const profile = await getAuthenticatedProfile();
+  const isCustomer = profile?.role === "CUSTOMER";
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/88 shadow-[0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl">
       <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
-        <Link href="/" aria-label="InsureFlow home" className="group shrink-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">
+        <Link
+          href={isCustomer ? "/dashboard" : "/"}
+          aria-label={isCustomer ? "InsureFlow dashboard" : "InsureFlow home"}
+          className="group shrink-0 cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]"
+        >
           <BrandLockup compactOnMobile eager markClassName="size-10 transition-transform duration-300 group-hover:scale-[1.04]" />
         </Link>
         <nav aria-label="Primary navigation" className="flex min-w-0 items-center gap-2 sm:gap-3">
           {!profile ? <div className="mr-2 hidden items-center gap-4 lg:flex xl:gap-5"><Link href="/#coverage" className={navLinkClass}>Insurance</Link><Link href="/#how-it-works" className={navLinkClass}>How it works</Link><Link href="/#claims" className={navLinkClass}>Claims</Link><Link href="/#ai" className={navLinkClass}>AI</Link><Link href="/#help" className={navLinkClass}>Help</Link></div> : null}
-          {profile?.role === "CUSTOMER" ? <><Link href="/dashboard" className={navLinkClass}>Dashboard</Link><Link href="/claim" className={`${navLinkClass} hidden min-[420px]:inline-flex`}>New Claim</Link><CustomerAccountMenu customerName={profile.full_name} customerEmail={profile.email} /></> : profile && isStaffRole(profile.role) ? <Link href="/admin/claims" className={navLinkClass}>Claims</Link> : <><Link href="/login" className={navLinkClass}>Sign in</Link><Link href="/signup" className={buttonClassName("primary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Create account</Link></>}
+          {isCustomer ? <CustomerAccountMenu customerName={profile.full_name} customerEmail={profile.email} /> : profile && isStaffRole(profile.role) ? <Link href="/admin/claims" className={navLinkClass}>Claims</Link> : <><Link href="/login" className={navLinkClass}>Sign in</Link><Link href="/signup" className={buttonClassName("primary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Create account</Link></>}
           {profile && isStaffRole(profile.role) ? <form action={signOutAction}><button type="submit" className={buttonClassName("secondary", "min-h-9 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm")}>Sign Out</button></form> : null}
         </nav>
       </div>

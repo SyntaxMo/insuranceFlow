@@ -45,6 +45,7 @@ describe("customer policy document action", () => {
     getPolicyDocumentMetadataMock.mockResolvedValue({ file_name: "InsureFlow-MOT-2026-D95F565D.pdf" });
     render(await CustomerPolicyPage({ params: Promise.resolve({ id: policyId }) }));
 
+    expect(screen.getByRole("link", { name: "← Back to dashboard" }).getAttribute("href")).toBe("/dashboard");
     const download = screen.getByRole("link", { name: "Download policy MOT-2026-D95F565D" });
     expect(download.getAttribute("href")).toBe(`/dashboard/policies/${policyId}/document`);
   });
