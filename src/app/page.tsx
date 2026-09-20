@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HelpFaq } from "@/components/marketing/HelpFaq";
 import { HeroCoverageStory } from "@/components/marketing/HeroCoverageStory";
 import { Reveal } from "@/components/marketing/Reveal";
+import { CursorAmbientGlow } from "@/components/marketing/CursorAmbientGlow";
 import { PublicCookieNotice } from "@/components/privacy/PublicCookieNotice";
 import { buttonClassName } from "@/components/ui/Forms";
 import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
@@ -38,6 +39,7 @@ function CheckIcon() {
 export function PublicHomePage() {
   return (
     <div className="overflow-x-clip bg-[#f7fafb]">
+      <CursorAmbientGlow />
       <HeroCoverageStory />
 
       <section aria-labelledby="coverage-comparison-title" className="bg-[#f7fafb] px-4 pb-20 pt-6 sm:px-6 sm:pb-24 lg:px-8">

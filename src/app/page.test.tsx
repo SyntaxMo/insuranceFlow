@@ -32,6 +32,7 @@ describe("premium public landing page", () => {
 
   it("renders the product story and existing CTA routes", () => {
     render(<PublicHomePage />);
+    expect(document.querySelector("[data-cursor-ambient-glow]")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 1, name: "Drive with confidence." })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "AI-assisted claims, human decisions." })).toBeTruthy();
     expect(screen.getAllByRole("link", { name: "Create account" })[0].getAttribute("href")).toBe("/signup");
