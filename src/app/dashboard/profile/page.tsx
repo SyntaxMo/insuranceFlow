@@ -1,5 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
+import { ChangeEmailControl } from "@/components/profile/ChangeEmailControl";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
@@ -18,22 +21,40 @@ function ProfileAvatar() {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
   return (
     <div className="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0 sm:grid sm:grid-cols-[10rem_1fr] sm:gap-6">
       <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-medium text-[var(--brand-navy)] sm:mt-0">{value}</dd>
+      <dd className="mt-1 flex min-w-0 items-center justify-between gap-4 text-sm font-medium text-[var(--brand-navy)] sm:mt-0">
+        <span className="min-w-0 break-words">{value}</span>
+        {action ? <span className="shrink-0">{action}</span> : null}
+      </dd>
     </div>
   );
 }
 
-export default async function CustomerProfilePage() {
+export default async function CustomerProfilePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ emailUpdated?: string; emailChangePending?: string }>;
+} = {}) {
   const profile = await requireCustomer();
   const { summary, error } = await getCustomerAccountSummary(profile.id);
   const displayName = profile.full_name?.trim() || "Customer";
+  const parameters = await searchParams;
+  const email = profile.email?.trim() || "Not provided";
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      {parameters?.emailUpdated === "1" ? (
+        <ConfirmationToast message="Email updated successfully" marker="emailUpdated" />
+      ) : parameters?.emailChangePending === "1" ? (
+        <ConfirmationToast
+          message="Your email change is still awaiting verification."
+          marker="emailChangePending"
+          tone="info"
+        />
+      ) : null}
       <BackToDashboardLink />
       <header className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
         <ProfileAvatar />
@@ -59,9 +80,13 @@ export default async function CustomerProfilePage() {
         <section aria-labelledby="contact-information-heading">
           <Card className="h-full">
             <h2 id="contact-information-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Contact information</h2>
-            <p className="mt-1 text-sm text-slate-500">These details are view-only for now.</p>
+            <p className="mt-1 text-sm text-slate-500">Your verified contact details.</p>
             <dl className="mt-6">
-              <DetailRow label="Email" value={profile.email?.trim() || "Not provided"} />
+              <DetailRow
+                label="Email"
+                value={email}
+                action={profile.email ? <ChangeEmailControl /> : undefined}
+              />
               <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} />
             </dl>
           </Card>

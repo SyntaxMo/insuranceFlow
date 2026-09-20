@@ -1,11 +1,12 @@
 import "server-only";
 
+import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createServerClient, createServiceRoleClient } from "@/lib/supabase/server";
-import type { User, UserRole } from "@/types/database";
+import type { User as ApplicationUser, UserRole } from "@/types/database";
 
 export type AuthProfile = Pick<
-  User,
+  ApplicationUser,
   | "id"
   | "full_name"
   | "email"
@@ -50,6 +51,42 @@ export async function getProfileByAuthUserId(
   return data as AuthProfile;
 }
 
+export async function synchronizeVerifiedProfileEmail(
+  profile: AuthProfile,
+  authUser: Pick<SupabaseAuthUser, "id" | "email">,
+): Promise<{ profile: AuthProfile; changed: boolean }> {
+  const verifiedEmail = authUser.email?.trim().toLowerCase();
+  const profileEmail = profile.email?.trim().toLowerCase();
+
+  if (
+    !verifiedEmail ||
+    profile.role !== "CUSTOMER" ||
+    authUser.id !== profile.auth_user_id ||
+    verifiedEmail === profileEmail
+  ) {
+    return { profile, changed: false };
+  }
+
+  const serviceClient = createServiceRoleClient();
+  const { data, error } = await serviceClient
+    .from("users")
+    .update({ email: verifiedEmail })
+    .eq("id", profile.id)
+    .eq("auth_user_id", authUser.id)
+    .select(PROFILE_COLUMNS)
+    .single();
+
+  if (error || !data) {
+    console.error(
+      "Verified profile email synchronization failed:",
+      error?.code || "PROFILE_UPDATE_FAILED",
+    );
+    return { profile, changed: false };
+  }
+
+  return { profile: data as AuthProfile, changed: true };
+}
+
 export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
   const authClient = await createServerClient();
   const {
@@ -58,7 +95,10 @@ export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
   } = await authClient.auth.getUser();
 
   if (authError || !user) return null;
-  return getProfileByAuthUserId(user.id);
+  const profile = await getProfileByAuthUserId(user.id);
+  if (!profile) return null;
+  const synchronized = await synchronizeVerifiedProfileEmail(profile, user);
+  return synchronized.profile;
 }
 
 export async function requireCustomer(): Promise<AuthProfile> {

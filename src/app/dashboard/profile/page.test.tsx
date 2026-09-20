@@ -89,11 +89,23 @@ describe("CustomerProfilePage", () => {
     expect(screen.queryByText(/database table unavailable/)).toBeNull();
   });
 
-  it("links to the existing legal pages without unfinished account controls", async () => {
+  it("links to the existing legal pages and exposes only the verified email control", async () => {
     render(await CustomerProfilePage());
     expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/privacy");
     expect(screen.getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
-    expect(screen.queryByRole("button", { name: /change|delete/i })).toBeNull();
+    expect(screen.getByRole("button", { name: "Change email" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /phone|delete/i })).toBeNull();
+  });
+
+  it("shows the one-time verified email completion state", async () => {
+    render(
+      await CustomerProfilePage({
+        searchParams: Promise.resolve({ emailUpdated: "1" }),
+      }),
+    );
+    expect(screen.getByRole("status").textContent).toContain(
+      "Email updated successfully",
+    );
   });
 });

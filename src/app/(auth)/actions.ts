@@ -9,17 +9,12 @@ import {
   type AuthFormState,
 } from "@/lib/auth/validation";
 import { routeForRole } from "@/lib/auth/session";
+import { authCallbackUrl } from "@/lib/auth/urls";
 import { createServerClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/types/database";
 
 function fieldsFromError(error: { flatten(): { fieldErrors: Record<string, string[]> } }) {
   return error.flatten().fieldErrors;
-}
-
-function authCallbackUrl(): string {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
-  return new URL("/auth/callback", siteUrl).toString();
 }
 
 export async function loginAction(

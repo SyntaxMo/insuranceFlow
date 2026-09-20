@@ -52,6 +52,7 @@ describe("shared branded chrome", () => {
     expect(screen.getByRole("button", { name: "Account menu" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Sign Out" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Account menu" }));
+    expect(screen.getByText("mohammed@example.com")).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Profile" }).getAttribute("href")).toBe("/dashboard/profile");
     expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "Dashboard" })).toBeNull();

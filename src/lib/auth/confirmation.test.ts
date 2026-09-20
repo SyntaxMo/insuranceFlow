@@ -8,6 +8,7 @@ const {
   getUserMock,
   signOutMock,
   getProfileByAuthUserIdMock,
+  synchronizeVerifiedProfileEmailMock,
 } = vi.hoisted(() => ({
   createServerClientMock: vi.fn(),
   exchangeCodeForSessionMock: vi.fn(),
@@ -15,6 +16,7 @@ const {
   getUserMock: vi.fn(),
   signOutMock: vi.fn(),
   getProfileByAuthUserIdMock: vi.fn(),
+  synchronizeVerifiedProfileEmailMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -23,6 +25,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({
   getProfileByAuthUserId: getProfileByAuthUserIdMock,
+  synchronizeVerifiedProfileEmail: synchronizeVerifiedProfileEmailMock,
   routeForRole: (role: string) =>
     role === "CUSTOMER" ? "/dashboard" : "/admin",
 }));
@@ -48,13 +51,17 @@ describe("handleAuthConfirmation", () => {
     exchangeCodeForSessionMock.mockResolvedValue({ error: null });
     verifyOtpMock.mockResolvedValue({ error: null });
     getUserMock.mockResolvedValue({
-      data: { user: { id: "auth-user-id" } },
+      data: { user: { id: "auth-user-id", email: "customer@example.com" } },
       error: null,
     });
     getProfileByAuthUserIdMock.mockResolvedValue({
       id: "profile-id",
       role: "CUSTOMER",
     });
+    synchronizeVerifiedProfileEmailMock.mockImplementation(async (profile) => ({
+      profile,
+      changed: false,
+    }));
   });
 
   it("exchanges a PKCE code, loads the profile, and redirects a customer", async () => {
@@ -91,6 +98,31 @@ describe("handleAuthConfirmation", () => {
       type: "email",
     });
     expect(exchangeCodeForSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("routes a verified email change to profile with a one-time success marker", async () => {
+    synchronizeVerifiedProfileEmailMock.mockResolvedValue({
+      profile: { id: "profile-id", role: "CUSTOMER", email: "new@example.com" },
+      changed: true,
+    });
+
+    const response = await handleAuthConfirmation(
+      request("?code=test-code&intent=email-change"),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/dashboard/profile?emailUpdated=1",
+    );
+  });
+
+  it("keeps a secure email change pending until Auth exposes the verified address", async () => {
+    const response = await handleAuthConfirmation(
+      request("?code=test-code&intent=email-change"),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/dashboard/profile?emailChangePending=1",
+    );
   });
 
   it("redirects staff to admin without a customer toast marker", async () => {

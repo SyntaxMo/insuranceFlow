@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 export function ConfirmationToast({
   message = "Your email has been confirmed.",
   marker = "confirmed",
+  tone = "success",
 }: {
   message?: string;
   marker?: string;
+  tone?: "success" | "info";
 }) {
   const [visible, setVisible] = useState(true);
 
@@ -26,17 +28,24 @@ export function ConfirmationToast({
 
   if (!visible) return null;
 
+  const toneClass = tone === "success"
+    ? "border-emerald-200 text-emerald-800"
+    : "border-sky-200 text-sky-800";
+  const iconClass = tone === "success"
+    ? "bg-emerald-100 text-emerald-700"
+    : "bg-sky-100 text-sky-700";
+
   return (
     <div
-      className="fixed right-4 top-4 z-50 flex max-w-sm items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg sm:right-6 sm:top-6"
+      className={`fixed right-4 top-4 z-50 flex max-w-sm items-center gap-3 rounded-xl border bg-white px-4 py-3 text-sm font-medium shadow-lg sm:right-6 sm:top-6 ${toneClass}`}
       role="status"
       aria-live="polite"
     >
       <span
-        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+        className={`flex size-6 shrink-0 items-center justify-center rounded-full ${iconClass}`}
         aria-hidden="true"
       >
-        ✓
+        {tone === "success" ? "✓" : "i"}
       </span>
       {message}
     </div>

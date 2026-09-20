@@ -16,6 +16,7 @@ const {
   insertProfileMock: vi.fn(),
 }));
 
+vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 vi.mock("@/lib/auth/session", () => ({ routeForRole: vi.fn() }));

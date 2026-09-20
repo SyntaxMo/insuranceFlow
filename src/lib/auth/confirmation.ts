@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   getProfileByAuthUserId,
   routeForRole,
+  synchronizeVerifiedProfileEmail,
 } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -84,8 +85,19 @@ export async function handleAuthConfirmation(
     return failureRedirect(request, "missing-profile");
   }
 
-  const destination = new URL(routeForRole(profile.role), request.url);
-  if (profile.role === "CUSTOMER") {
+  const synchronized = await synchronizeVerifiedProfileEmail(profile, user);
+  const isEmailChange = request.nextUrl.searchParams.get("intent") === "email-change";
+  const destination = new URL(
+    isEmailChange && synchronized.profile.role === "CUSTOMER"
+      ? "/dashboard/profile"
+      : routeForRole(synchronized.profile.role),
+    request.url,
+  );
+  if (isEmailChange && synchronized.changed) {
+    destination.searchParams.set("emailUpdated", "1");
+  } else if (isEmailChange) {
+    destination.searchParams.set("emailChangePending", "1");
+  } else if (synchronized.profile.role === "CUSTOMER") {
     destination.searchParams.set("confirmed", "1");
   }
   return NextResponse.redirect(destination);
