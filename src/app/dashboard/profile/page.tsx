@@ -26,31 +26,20 @@ function DetailRow({
   label,
   value,
   action,
-  grouped = false,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   action?: ReactNode;
-  grouped?: boolean;
 }) {
-  if (action || grouped) {
-    return (
-      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
-        <div className="min-w-0 sm:flex sm:items-center sm:gap-4">
-          <dt className="shrink-0 text-sm text-slate-500">{label}</dt>
-          <dd className="mt-1 min-w-0 break-words text-sm font-medium text-[var(--brand-navy)] [overflow-wrap:anywhere] sm:mt-0 sm:whitespace-nowrap">
-            {value}
-          </dd>
-        </div>
-        {action ? <span className="flex shrink-0 justify-end">{action}</span> : null}
-      </div>
-    );
-  }
-
   return (
-    <div className="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0 sm:grid sm:grid-cols-[10rem_1fr] sm:gap-6">
-      <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className="mt-1 min-w-0 break-words text-sm font-medium text-[var(--brand-navy)] sm:mt-0">{value}</dd>
+    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
+      <div className="min-w-0 sm:flex sm:items-center sm:gap-4">
+        <dt className="shrink-0 text-sm text-slate-500">{label}</dt>
+        <dd className="mt-1 min-w-0 break-words text-sm font-medium text-[var(--brand-navy)] [overflow-wrap:anywhere] sm:mt-0 sm:whitespace-nowrap">
+          {value}
+        </dd>
+      </div>
+      {action ? <span className="flex shrink-0 justify-end">{action}</span> : null}
     </div>
   );
 }
@@ -87,37 +76,35 @@ export default async function CustomerProfilePage({
         </div>
       </header>
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-2">
-        <section aria-labelledby="account-details-heading">
-          <Card className="h-full">
-            <h2 id="account-details-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Account details</h2>
-            <p className="mt-1 text-sm text-slate-500">The identity connected to your customer portal.</p>
-            <dl className="mt-6">
-              <DetailRow
-                label="Full name"
-                value={displayName}
-                action={<ChangeFullNameControl currentName={displayName} />}
-              />
-              <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} grouped />
-            </dl>
-          </Card>
-        </section>
-
-        <section aria-labelledby="contact-information-heading">
-          <Card className="h-full">
-            <h2 id="contact-information-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Contact information</h2>
-            <p className="mt-1 text-sm text-slate-500">Your verified contact details.</p>
-            <dl className="mt-6">
-              <DetailRow
-                label="Email"
-                value={email}
-                action={profile.email ? <ChangeEmailControl currentEmail={email} /> : undefined}
-              />
-              <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} grouped />
-            </dl>
-          </Card>
-        </section>
-      </div>
+      <section className="mt-8" aria-labelledby="account-details-heading">
+        <Card>
+          <h2 id="account-details-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Account details</h2>
+          <p className="mt-1 text-sm text-slate-500">Manage the personal and contact information connected to your InsureFlow account.</p>
+          <dl className="mt-6">
+            <DetailRow
+              label="Full name"
+              value={displayName}
+              action={<ChangeFullNameControl currentName={displayName} />}
+            />
+            <DetailRow
+              label="Email"
+              value={email}
+              action={profile.email ? <ChangeEmailControl currentEmail={email} /> : undefined}
+            />
+            <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} />
+            <DetailRow
+              label="Password"
+              value={
+                <>
+                  <span className="tracking-[0.18em]" aria-hidden="true" data-testid="password-mask">••••••••</span>
+                  <span className="sr-only">Password is set</span>
+                </>
+              }
+            />
+            <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} />
+          </dl>
+        </Card>
+      </section>
 
       <section className="mt-6" aria-labelledby="account-summary-heading">
         <Card>

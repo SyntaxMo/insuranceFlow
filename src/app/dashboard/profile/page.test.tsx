@@ -72,6 +72,26 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByText("Not provided")).toBeTruthy();
   });
 
+  it("consolidates profile information into one Account details card", async () => {
+    render(await CustomerProfilePage());
+
+    expect(screen.getAllByRole("heading", { name: "Account details" })).toHaveLength(1);
+    expect(screen.getByText("Manage the personal and contact information connected to your InsureFlow account.")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Contact information" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Security" })).toBeNull();
+    expect(screen.getByText("Full name")).toBeTruthy();
+    expect(screen.getByText("Email")).toBeTruthy();
+    expect(screen.getByText("Phone number")).toBeTruthy();
+    expect(screen.getByText("Password")).toBeTruthy();
+    expect(screen.getByText("Member since")).toBeTruthy();
+    const mask = screen.getByTestId("password-mask");
+    expect(mask.textContent).toBe("••••••••");
+    expect(mask.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.getByText("Password is set")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Change password" })).toBeNull();
+    expect(screen.queryByText(/password hash|credential|actual password/i)).toBeNull();
+  });
+
   it.each([
     ["an unauthenticated visitor", "/login"],
     ["a Claims Officer", "/admin"],
