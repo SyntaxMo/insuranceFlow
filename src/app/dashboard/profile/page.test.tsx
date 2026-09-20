@@ -47,10 +47,19 @@ describe("CustomerProfilePage", () => {
     const avatar = screen.getByTestId("profile-page-avatar");
     expect(avatar.querySelector('[data-testid="default-profile-icon"]')).toBeTruthy();
     expect(avatar.textContent).toBe("");
-    expect(screen.getByText("Mohammed Essam")).toBeTruthy();
-    expect(screen.getByText("mohammed@example.com")).toBeTruthy();
-    expect(screen.getByText("+973 3900 0000")).toBeTruthy();
-    expect(screen.getByText("Apr 12, 2025")).toBeTruthy();
+    const fullName = screen.getByText("Mohammed Essam");
+    expect(fullName.parentElement?.className).toContain("sm:flex");
+    expect(fullName.parentElement?.className).toContain("sm:gap-4");
+    const email = screen.getByText("mohammed@example.com");
+    expect(email.className).toContain("sm:whitespace-nowrap");
+    expect(email.parentElement?.className).toContain("sm:flex");
+    expect(email.parentElement?.className).toContain("sm:gap-4");
+    const phone = screen.getByText("+973 3900 0000");
+    expect(phone.parentElement?.className).toContain("sm:flex");
+    expect(phone.parentElement?.className).toContain("sm:gap-4");
+    const memberSince = screen.getByText("Apr 12, 2025");
+    expect(memberSince.parentElement?.className).toContain("sm:flex");
+    expect(memberSince.parentElement?.className).toContain("sm:gap-4");
     expect(screen.getByText("Active policies").nextElementSibling?.textContent).toBe("2");
     expect(screen.getByText("Open claims").nextElementSibling?.textContent).toBe("1");
     expect(screen.getByText("Total claims").nextElementSibling?.textContent).toBe("3");
@@ -89,12 +98,16 @@ describe("CustomerProfilePage", () => {
     expect(screen.queryByText(/database table unavailable/)).toBeNull();
   });
 
-  it("links to the existing legal pages and exposes only the verified email control", async () => {
+  it("links to the existing legal pages and exposes only supported profile controls", async () => {
     render(await CustomerProfilePage());
     expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/privacy");
     expect(screen.getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
     expect(screen.getByRole("button", { name: "Change email" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Change full name" })).toBeTruthy();
+    expect(screen.getByText("Member since").parentElement?.querySelector("button")).toBeNull();
+    expect(screen.getByRole("button", { name: "Change email" }).textContent).toBe("");
+    expect(screen.getByRole("button", { name: "Change email" }).querySelector('[data-testid="pencil-icon"]')).toBeTruthy();
     expect(screen.queryByRole("button", { name: /phone|delete/i })).toBeNull();
   });
 
@@ -107,5 +120,17 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByRole("status").textContent).toContain(
       "Email updated successfully",
     );
+  });
+
+  it("uses customer-friendly pending email change wording", async () => {
+    render(
+      await CustomerProfilePage({
+        searchParams: Promise.resolve({ emailChangePending: "1" }),
+      }),
+    );
+    const status = screen.getByRole("status");
+    expect(status.textContent).toContain("Email change pending");
+    expect(status.textContent).toContain("current and new email addresses");
+    expect(status.textContent).not.toContain("Supabase");
   });
 });

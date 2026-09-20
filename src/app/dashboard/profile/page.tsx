@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { ChangeEmailControl } from "@/components/profile/ChangeEmailControl";
+import { ChangeFullNameControl } from "@/components/profile/ChangeFullNameControl";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
@@ -21,14 +22,35 @@ function ProfileAvatar() {
   );
 }
 
-function DetailRow({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
+function DetailRow({
+  label,
+  value,
+  action,
+  grouped = false,
+}: {
+  label: string;
+  value: string;
+  action?: ReactNode;
+  grouped?: boolean;
+}) {
+  if (action || grouped) {
+    return (
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0">
+        <div className="min-w-0 sm:flex sm:items-center sm:gap-4">
+          <dt className="shrink-0 text-sm text-slate-500">{label}</dt>
+          <dd className="mt-1 min-w-0 break-words text-sm font-medium text-[var(--brand-navy)] [overflow-wrap:anywhere] sm:mt-0 sm:whitespace-nowrap">
+            {value}
+          </dd>
+        </div>
+        {action ? <span className="flex shrink-0 justify-end">{action}</span> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="border-b border-slate-100 py-4 first:pt-0 last:border-0 last:pb-0 sm:grid sm:grid-cols-[10rem_1fr] sm:gap-6">
       <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className="mt-1 flex min-w-0 items-center justify-between gap-4 text-sm font-medium text-[var(--brand-navy)] sm:mt-0">
-        <span className="min-w-0 break-words">{value}</span>
-        {action ? <span className="shrink-0">{action}</span> : null}
-      </dd>
+      <dd className="mt-1 min-w-0 break-words text-sm font-medium text-[var(--brand-navy)] sm:mt-0">{value}</dd>
     </div>
   );
 }
@@ -50,7 +72,7 @@ export default async function CustomerProfilePage({
         <ConfirmationToast message="Email updated successfully" marker="emailUpdated" />
       ) : parameters?.emailChangePending === "1" ? (
         <ConfirmationToast
-          message="Your email change is still awaiting verification."
+          message="Email change pending — Confirm the links sent to your current and new email addresses to complete the change."
           marker="emailChangePending"
           tone="info"
         />
@@ -71,8 +93,12 @@ export default async function CustomerProfilePage({
             <h2 id="account-details-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Account details</h2>
             <p className="mt-1 text-sm text-slate-500">The identity connected to your customer portal.</p>
             <dl className="mt-6">
-              <DetailRow label="Full name" value={displayName} />
-              <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} />
+              <DetailRow
+                label="Full name"
+                value={displayName}
+                action={<ChangeFullNameControl currentName={displayName} />}
+              />
+              <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} grouped />
             </dl>
           </Card>
         </section>
@@ -85,9 +111,9 @@ export default async function CustomerProfilePage({
               <DetailRow
                 label="Email"
                 value={email}
-                action={profile.email ? <ChangeEmailControl /> : undefined}
+                action={profile.email ? <ChangeEmailControl currentEmail={email} /> : undefined}
               />
-              <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} />
+              <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} grouped />
             </dl>
           </Card>
         </section>

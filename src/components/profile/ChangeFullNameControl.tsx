@@ -2,15 +2,15 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
-  requestEmailChangeAction,
-  type EmailChangeState,
+  updateFullNameAction,
+  type FullNameChangeState,
 } from "@/app/dashboard/profile/actions";
 import { Button, TextInput } from "@/components/ui/Forms";
 import { PencilIcon } from "@/components/ui/PencilIcon";
 
-const initialState: EmailChangeState = {};
+const initialState: FullNameChangeState = {};
 
-export function ChangeEmailControl({ currentEmail }: { currentEmail: string }) {
+export function ChangeFullNameControl({ currentName }: { currentName: string }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -24,29 +24,29 @@ export function ChangeEmailControl({ currentEmail }: { currentEmail: string }) {
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Change email"
-        title="Change email"
+        aria-label="Change full name"
+        title="Change full name"
         onClick={() => setOpen(true)}
         className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-slate-500 transition-colors hover:border-slate-200 hover:bg-slate-50 hover:text-[var(--brand-teal-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]"
       >
         <PencilIcon />
       </button>
       {open ? (
-        <ChangeEmailDialog currentEmail={currentEmail} onClose={closeDialog} />
+        <ChangeFullNameDialog currentName={currentName} onClose={closeDialog} />
       ) : null}
     </>
   );
 }
 
-function ChangeEmailDialog({
-  currentEmail,
+function ChangeFullNameDialog({
+  currentName,
   onClose,
 }: {
-  currentEmail: string;
+  currentName: string;
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
-    requestEmailChangeAction,
+    updateFullNameAction,
     initialState,
   );
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ function ChangeEmailDialog({
   useEffect(() => {
     const target = state.success
       ? successCloseRef.current
-      : dialogRef.current?.querySelector<HTMLInputElement>("#new-email");
+      : dialogRef.current?.querySelector<HTMLInputElement>("#full-name");
     target?.focus();
   }, [state.success]);
 
@@ -89,7 +89,7 @@ function ChangeEmailDialog({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose, pending]);
 
-  const fieldError = state.fields?.email?.[0];
+  const fieldError = state.fields?.fullName?.[0];
 
   return (
     <div
@@ -102,11 +102,11 @@ function ChangeEmailDialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="change-email-title"
-        aria-describedby="change-email-description"
+        aria-labelledby="change-full-name-title"
+        aria-describedby="change-full-name-description"
         className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
       >
-        {state.success && state.pendingEmail ? (
+        {state.success ? (
           <div role="status" aria-live="polite">
             <div
               className="flex size-10 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700"
@@ -115,24 +115,14 @@ function ChangeEmailDialog({
               ✓
             </div>
             <h2
-              id="change-email-title"
+              id="change-full-name-title"
               className="mt-4 font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]"
             >
-              Confirm your email change
+              Name updated successfully
             </h2>
-            <p id="change-email-description" className="mt-2 text-sm leading-6 text-slate-600">
-              For your security, we sent confirmation links to your current and new email addresses. Your email will update after both are confirmed.
+            <p id="change-full-name-description" className="mt-2 text-sm leading-6 text-slate-600">
+              Your profile now shows {state.fullName}.
             </p>
-            <dl className="mt-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-              <div>
-                <dt className="text-xs font-medium text-slate-500">Current email</dt>
-                <dd className="mt-0.5 break-all text-sm font-medium text-[var(--brand-navy)]">{currentEmail}</dd>
-              </div>
-              <div className="border-t border-slate-200 pt-3">
-                <dt className="text-xs font-medium text-slate-500">New email</dt>
-                <dd className="mt-0.5 break-all text-sm font-medium text-[var(--brand-navy)]">{state.pendingEmail}</dd>
-              </div>
-            </dl>
             <div className="mt-6 flex justify-end">
               <Button ref={successCloseRef} type="button" onClick={onClose}>
                 Done
@@ -142,33 +132,32 @@ function ChangeEmailDialog({
         ) : (
           <>
             <h2
-              id="change-email-title"
+              id="change-full-name-title"
               className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]"
             >
-              Change email address
+              Change full name
             </h2>
-            <p id="change-email-description" className="mt-2 text-sm leading-6 text-slate-600">
-              We&apos;ll send a verification link to your new email address before the change takes effect.
+            <p id="change-full-name-description" className="mt-2 text-sm leading-6 text-slate-600">
+              Update the name shown across your InsureFlow customer account.
             </p>
             <form action={formAction} className="mt-6">
-              <label htmlFor="new-email" className="block text-sm font-medium text-slate-800">
-                New email address
+              <label htmlFor="full-name" className="block text-sm font-medium text-slate-800">
+                Full name
               </label>
               <TextInput
-                id="new-email"
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                maxLength={254}
+                id="full-name"
+                name="fullName"
+                type="text"
+                autoComplete="name"
+                maxLength={100}
                 required
+                defaultValue={currentName}
                 aria-invalid={fieldError ? true : undefined}
-                aria-describedby={fieldError ? "new-email-error" : undefined}
+                aria-describedby={fieldError ? "full-name-error" : undefined}
                 className="mt-1.5"
-                placeholder="new@example.com"
               />
               {fieldError ? (
-                <p id="new-email-error" className="mt-1.5 text-sm text-rose-600" role="alert">
+                <p id="full-name-error" className="mt-1.5 text-sm text-rose-600" role="alert">
                   {fieldError}
                 </p>
               ) : null}
@@ -182,7 +171,7 @@ function ChangeEmailDialog({
                   Cancel
                 </Button>
                 <Button type="submit" disabled={pending} aria-busy={pending}>
-                  {pending ? "Sending…" : "Send verification"}
+                  {pending ? "Saving…" : "Save changes"}
                 </Button>
               </div>
             </form>
