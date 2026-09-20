@@ -80,8 +80,13 @@ describe("public legal information", () => {
     render(await CookiePolicyPage());
     expect(screen.getByRole("heading", { name: "Essential cookies and storage" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Optional cookies" })).toBeTruthy();
-    expect(screen.getByText("InsureFlow does not currently use advertising or analytics cookies. It does not add optional marketing or behavioral tracking through the cookie notice.")).toBeTruthy();
-    expect(screen.getByText(/current notice version and the fact that it was acknowledged/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "How InsureFlow uses them" })).toBeTruthy();
+    expect(screen.getByText("InsureFlow does not currently use advertising, analytics, marketing, or behavioral-tracking cookies.")).toBeTruthy();
+    expect(screen.getByText(/small acknowledgement in your browser/)).toBeTruthy();
+    expect(screen.getByText(/does not contain your name, email address, account ID/)).toBeTruthy();
+    const lastUse = screen.getByText("remember whether the cookie notice has been acknowledged");
+    const closingCopy = screen.getByText("These technologies are necessary for core features of the application to work correctly.");
+    expect(lastUse.compareDocumentPosition(closingCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(await screen.findByRole("complementary", { name: "Cookies on InsureFlow" })).toBeTruthy();
   });
 

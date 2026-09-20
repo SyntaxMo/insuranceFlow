@@ -6,6 +6,7 @@ export type LegalSection = {
   title: string;
   paragraphs?: string[];
   bullets?: string[];
+  closingParagraphs?: string[];
 };
 
 export async function getLegalPageNavigation(): Promise<{
@@ -51,6 +52,7 @@ export function LegalPage({
               <div className="mt-3 space-y-3 text-sm leading-7 text-slate-600 sm:text-base">
                 {section.paragraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                 {section.bullets ? <ul className="list-disc space-y-2 pl-5 marker:text-[var(--brand-teal)]">{section.bullets.map((item) => <li key={item} className="pl-1">{item}</li>)}</ul> : null}
+                {section.closingParagraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
               </div>
             </section>
           ))}
