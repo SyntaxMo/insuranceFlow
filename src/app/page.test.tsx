@@ -23,6 +23,13 @@ describe("premium public landing page", () => {
     vi.clearAllMocks();
   });
 
+  it("shows the informational cookie notice to a first-time public visitor", async () => {
+    window.localStorage.clear();
+    render(<PublicHomePage />);
+    expect(await screen.findByRole("complementary", { name: "Cookies on InsureFlow" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /accept all|reject all/i })).toBeNull();
+  });
+
   it("renders the product story and existing CTA routes", () => {
     render(<PublicHomePage />);
     expect(screen.getByRole("heading", { level: 1, name: "Drive with confidence." })).toBeTruthy();

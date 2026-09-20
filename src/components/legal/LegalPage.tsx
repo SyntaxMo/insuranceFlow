@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublicCookieNotice } from "@/components/privacy/PublicCookieNotice";
 import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
 
 export type LegalSection = {
@@ -55,6 +56,7 @@ export function LegalPage({
           ))}
         </div>
       </article>
+      {returnHref === "/" ? <PublicCookieNotice /> : null}
     </div>
   );
 }

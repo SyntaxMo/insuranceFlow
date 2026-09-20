@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HelpFaq } from "@/components/marketing/HelpFaq";
 import { HeroCoverageStory } from "@/components/marketing/HeroCoverageStory";
 import { Reveal } from "@/components/marketing/Reveal";
+import { PublicCookieNotice } from "@/components/privacy/PublicCookieNotice";
 import { buttonClassName } from "@/components/ui/Forms";
 import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
 
@@ -108,6 +109,7 @@ export function PublicHomePage() {
           </Reveal>
         </div>
       </section>
+      <PublicCookieNotice />
     </div>
   );
 }

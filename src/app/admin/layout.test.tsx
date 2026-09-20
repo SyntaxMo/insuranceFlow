@@ -18,6 +18,7 @@ describe("AdminLayout", () => {
     expect(result.props.initialRole).toBe("CLAIMS_OFFICER");
     expect(result.props.area).toBe("staff");
     expect(result.props.children.props.children).toBe("Claims workspace");
+    expect(JSON.stringify(result)).not.toContain("Cookies on InsureFlow");
   });
 
   it("does not swallow customer or unauthenticated redirects", async () => {

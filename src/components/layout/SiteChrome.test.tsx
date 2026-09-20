@@ -73,6 +73,7 @@ describe("shared branded chrome", () => {
     expect(screen.getByText("Motor insurance workflows, made clearer.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/privacy");
+    expect(screen.getByRole("link", { name: "Cookie Policy" }).getAttribute("href")).toBe("/cookies");
     expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
   });
 });

@@ -23,6 +23,7 @@ describe("DashboardLayout", () => {
     expect(result.props.initialRole).toBe("CUSTOMER");
     expect(result.props.area).toBe("customer");
     expect(result.props.children.props.children).toBe("Customer dashboard");
+    expect(JSON.stringify(result)).not.toContain("Cookies on InsureFlow");
   });
 
   it("does not swallow staff or unauthenticated redirects", async () => {
