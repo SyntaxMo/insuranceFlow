@@ -4,6 +4,7 @@ import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { ChangeEmailControl } from "@/components/profile/ChangeEmailControl";
 import { ChangeFullNameControl } from "@/components/profile/ChangeFullNameControl";
+import { ChangePasswordControl } from "@/components/profile/ChangePasswordControl";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
@@ -100,6 +101,7 @@ export default async function CustomerProfilePage({
                   <span className="sr-only">Password is set</span>
                 </>
               }
+              action={profile.email ? <ChangePasswordControl currentEmail={email} /> : undefined}
             />
             <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} />
           </dl>

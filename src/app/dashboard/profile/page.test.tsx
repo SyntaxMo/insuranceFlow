@@ -88,7 +88,8 @@ describe("CustomerProfilePage", () => {
     expect(mask.textContent).toBe("••••••••");
     expect(mask.getAttribute("aria-hidden")).toBe("true");
     expect(screen.getByText("Password is set")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Change password" })).toBeNull();
+    const passwordButton = screen.getByRole("button", { name: "Change password" });
+    expect(passwordButton.querySelector('[data-testid="pencil-icon"]')).toBeTruthy();
     expect(screen.queryByText(/password hash|credential|actual password/i)).toBeNull();
   });
 
@@ -125,6 +126,7 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
     expect(screen.getByRole("button", { name: "Change email" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Change full name" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Change password" })).toBeTruthy();
     expect(screen.getByText("Member since").parentElement?.querySelector("button")).toBeNull();
     expect(screen.getByRole("button", { name: "Change email" }).textContent).toBe("");
     expect(screen.getByRole("button", { name: "Change email" }).querySelector('[data-testid="pencil-icon"]')).toBeTruthy();
