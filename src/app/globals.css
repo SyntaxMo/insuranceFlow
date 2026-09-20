@@ -35,6 +35,37 @@ html {
   }
 }
 
+@keyframes cookie-notice-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cookie-notice-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.cookie-notice-enter {
+  animation: cookie-notice-enter 300ms ease-out both;
+}
+
+.cookie-notice-exit {
+  animation: cookie-notice-exit 300ms ease-out both;
+  pointer-events: none;
+}
+
 body {
   background:
     radial-gradient(1200px 500px at 10% -10%, #d9e8f5 0%, transparent 55%),
@@ -48,6 +79,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .cookie-notice-enter,
+  .cookie-notice-exit {
+    animation: none;
   }
 }
 

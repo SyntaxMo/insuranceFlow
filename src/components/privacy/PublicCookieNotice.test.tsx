@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PublicCookieNotice } from "@/components/privacy/PublicCookieNotice";
 import {
   COOKIE_NOTICE_STORAGE_KEY,
@@ -11,11 +11,15 @@ import {
 
 describe("PublicCookieNotice", () => {
   beforeEach(() => window.localStorage.clear());
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   it("appears on a first visit without fake optional-cookie controls", async () => {
     render(<PublicCookieNotice />);
-    expect(await screen.findByRole("complementary", { name: "Cookies on InsureFlow" })).toBeTruthy();
+    const notice = await screen.findByRole("complementary", { name: "Cookies on InsureFlow" });
+    expect(notice.className).toContain("cookie-notice-enter");
     expect(screen.getByRole("button", { name: "Got it" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cookie policy" }).getAttribute("href")).toBe("/cookies");
     expect(screen.queryByRole("button", { name: /accept all/i })).toBeNull();
@@ -26,7 +30,9 @@ describe("PublicCookieNotice", () => {
     const user = userEvent.setup();
     render(<PublicCookieNotice />);
     await user.click(await screen.findByRole("button", { name: "Got it" }));
-    expect(screen.queryByRole("complementary", { name: "Cookies on InsureFlow" })).toBeNull();
+    expect(
+      screen.getByRole("complementary", { name: "Cookies on InsureFlow" }).className,
+    ).toContain("cookie-notice-exit");
     expect(JSON.parse(window.localStorage.getItem(COOKIE_NOTICE_STORAGE_KEY) ?? "{}")).toEqual({
       acknowledged: true,
       version: COOKIE_NOTICE_VERSION,
@@ -34,6 +40,9 @@ describe("PublicCookieNotice", () => {
     expect(window.localStorage.getItem(COOKIE_NOTICE_STORAGE_KEY)).not.toMatch(
       /email|phone|user|claim|policy/i,
     );
+    await waitFor(() => {
+      expect(screen.queryByRole("complementary", { name: "Cookies on InsureFlow" })).toBeNull();
+    });
   });
 
   it("stays hidden on a return visit with the current acknowledgement", async () => {
@@ -63,6 +72,21 @@ describe("PublicCookieNotice", () => {
     await user.tab();
     expect(document.activeElement).toBe(button);
     await user.keyboard("{Enter}");
-    expect(screen.queryByText("Cookies on InsureFlow")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText("Cookies on InsureFlow")).toBeNull();
+    });
+  });
+
+  it("removes the notice without an animation delay when reduced motion is requested", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({ matches: true }),
+    );
+    const user = userEvent.setup();
+    render(<PublicCookieNotice />);
+    await user.click(await screen.findByRole("button", { name: "Got it" }));
+    await waitFor(() => {
+      expect(screen.queryByText("Cookies on InsureFlow")).toBeNull();
+    });
   });
 });
