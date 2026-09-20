@@ -80,6 +80,16 @@ export async function updateFullNameAction(
     return { message: "We could not update your name. Please try again." };
   }
 
+  const { error: metadataError } = await authClient.auth.updateUser({
+    data: { full_name: parsed.data.fullName },
+  });
+  if (metadataError) {
+    console.error(
+      "Customer Auth name metadata synchronization failed:",
+      metadataError.code || "AUTH_METADATA_UPDATE_FAILED",
+    );
+  }
+
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   createServiceRoleClient: vi.fn(),
   getProfileByAuthUserId: vi.fn(),
   getUser: vi.fn(),
+  updateUser: vi.fn(),
   revalidatePath: vi.fn(),
   from: vi.fn(),
   update: vi.fn(),
@@ -41,7 +42,9 @@ describe("updateFullNameAction", () => {
       select: mocks.select,
       single: mocks.single,
     };
-    mocks.createServerClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
+    mocks.createServerClient.mockResolvedValue({
+      auth: { getUser: mocks.getUser, updateUser: mocks.updateUser },
+    });
     mocks.createServiceRoleClient.mockReturnValue({ from: mocks.from });
     mocks.from.mockReturnValue(query);
     mocks.update.mockReturnValue(query);
@@ -55,6 +58,7 @@ describe("updateFullNameAction", () => {
       data: { user: { id: "auth-customer" } },
       error: null,
     });
+    mocks.updateUser.mockResolvedValue({ data: { user: {} }, error: null });
     mocks.getProfileByAuthUserId.mockResolvedValue({
       id: "profile-customer",
       auth_user_id: "auth-customer",
@@ -69,6 +73,12 @@ describe("updateFullNameAction", () => {
     expect(mocks.eq).toHaveBeenNthCalledWith(1, "id", "profile-customer");
     expect(mocks.eq).toHaveBeenNthCalledWith(2, "auth_user_id", "auth-customer");
     expect(result).toEqual({ success: true, fullName: "Maryam O'Neil-Sayed" });
+    expect(mocks.updateUser).toHaveBeenCalledWith({
+      data: { full_name: "Maryam O'Neil-Sayed" },
+    });
+    expect(mocks.update.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.updateUser.mock.invocationCallOrder[0]!,
+    );
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard/profile");
@@ -95,6 +105,9 @@ describe("updateFullNameAction", () => {
     expect(mocks.getProfileByAuthUserId).toHaveBeenCalledWith("auth-customer");
     expect(mocks.eq).toHaveBeenCalledWith("id", "profile-customer");
     expect(mocks.eq).not.toHaveBeenCalledWith("id", "another-profile");
+    expect(mocks.updateUser).toHaveBeenCalledWith({
+      data: { full_name: "Updated Name" },
+    });
   });
 
   it("rejects unauthenticated, Claims Officer, and Admin callers", async () => {
@@ -124,5 +137,23 @@ describe("updateFullNameAction", () => {
     const result = await updateFullNameAction({}, form("Updated Name"));
     expect(result).toEqual({ message: "We could not update your name. Please try again." });
     expect(JSON.stringify(result)).not.toContain("internal details");
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("keeps the authoritative profile update successful when Auth metadata sync fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.updateUser.mockResolvedValue({
+      data: { user: null },
+      error: { code: "AUTH_SYNC_FAILED", message: "provider internals" },
+    });
+
+    const result = await updateFullNameAction({}, form("  Maryam O'Neil-Sayed  "));
+
+    expect(mocks.update).toHaveBeenCalledWith({ full_name: "Maryam O'Neil-Sayed" });
+    expect(mocks.updateUser).toHaveBeenCalledWith({
+      data: { full_name: "Maryam O'Neil-Sayed" },
+    });
+    expect(result).toEqual({ success: true, fullName: "Maryam O'Neil-Sayed" });
+    expect(JSON.stringify(result)).not.toContain("provider internals");
   });
 });
