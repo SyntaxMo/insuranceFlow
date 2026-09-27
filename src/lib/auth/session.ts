@@ -38,7 +38,9 @@ export async function getProfileByAuthUserId(
     .maybeSingle();
 
   if (error) {
-    console.error("Authenticated profile lookup failed:", error.message);
+    console.error("Authenticated profile lookup failed:", {
+      code: error.code || "DATABASE_ERROR",
+    });
     return null;
   }
 

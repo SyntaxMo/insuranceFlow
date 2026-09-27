@@ -40,7 +40,6 @@ export async function GET(
 
   if (error || !data?.signedUrl) {
     console.error("Policy document signed URL creation failed:", {
-      policyId: parsedPolicyId.data,
       stage: "signed_url",
     });
     return message(503, "Policy document unavailable right now.");

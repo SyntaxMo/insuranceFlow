@@ -12,11 +12,14 @@ vi.mock("@/lib/supabase/server", () => ({ createServiceRoleClient: createService
 import { GET } from "@/app/api/admin/claims/[id]/documents/[documentId]/route";
 
 describe("officer claim document route", () => {
+  const createSignedUrl = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
     getStaffForApiMock.mockResolvedValue({ id: "officer", role: "CLAIMS_OFFICER" });
     getAuthorizedClaimDocumentMock.mockResolvedValue({ filePath: "CLM/report.pdf", fileName: "report.pdf" });
-    createServiceRoleClientMock.mockReturnValue({ storage: { from: vi.fn(() => ({ createSignedUrl: vi.fn().mockResolvedValue({ data: { signedUrl: "https://signed.example/report" }, error: null }) })) } });
+    createSignedUrl.mockResolvedValue({ data: { signedUrl: "https://signed.example/report" }, error: null });
+    createServiceRoleClientMock.mockReturnValue({ storage: { from: vi.fn(() => ({ createSignedUrl })) } });
   });
 
   it("rejects unauthenticated access before looking up storage metadata", async () => {
@@ -30,5 +33,6 @@ describe("officer claim document route", () => {
     const response = await GET(new Request("http://localhost/file?path=attacker/secret.pdf"), { params: Promise.resolve({ id: "claim-1", documentId: "doc-1" }) });
     expect(response.status).toBe(307);
     expect(getAuthorizedClaimDocumentMock).toHaveBeenCalledWith({ claimId: "claim-1", documentId: "doc-1" });
+    expect(createSignedUrl).toHaveBeenCalledWith("CLM/report.pdf", 180, undefined);
   });
 });

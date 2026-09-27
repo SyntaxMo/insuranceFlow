@@ -113,7 +113,9 @@ export async function issuePolicyVerificationCode({
     .limit(1);
 
   if (cooldownError) {
-    console.error("Policy verification cooldown lookup failed:", cooldownError.message);
+    console.error("Policy verification cooldown lookup failed:", {
+      code: cooldownError.code || "DATABASE_ERROR",
+    });
     return { ok: false, reason: "database" };
   }
 
@@ -140,7 +142,9 @@ export async function issuePolicyVerificationCode({
     .is("consumed_at", null);
 
   if (invalidateError) {
-    console.error("Previous policy verification invalidation failed:", invalidateError.message);
+    console.error("Previous policy verification invalidation failed:", {
+      code: invalidateError.code || "DATABASE_ERROR",
+    });
     return { ok: false, reason: "database" };
   }
 
@@ -169,7 +173,7 @@ export async function issuePolicyVerificationCode({
   if (insertError || !verification) {
     console.error(
       "Policy verification record creation failed:",
-      insertError?.message || "No verification record returned",
+      { code: insertError?.code || "NO_RECORD" },
     );
     if (insertError?.code === "23505") {
       return {
@@ -192,7 +196,9 @@ export async function issuePolicyVerificationCode({
       .delete()
       .eq("id", verification.id);
     if (cleanupError) {
-      console.error("Failed verification cleanup failed:", cleanupError.message);
+      console.error("Failed verification cleanup failed:", {
+        code: cleanupError.code || "DATABASE_ERROR",
+      });
     }
     return { ok: false, reason: "delivery" };
   }

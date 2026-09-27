@@ -44,7 +44,9 @@ export async function loginAction(
 
   if (profileError || !profile) {
     await authClient.auth.signOut();
-    console.error("Login profile lookup failed:", profileError?.message || "Profile missing");
+    console.error("Login profile lookup failed:", {
+      code: profileError?.code || "PROFILE_MISSING",
+    });
     return {
       message:
         "Your account is not linked to an InsureFlow profile. Contact support.",
@@ -106,7 +108,9 @@ export async function signupAction(
   });
 
   if (profileError) {
-    console.error("Customer profile creation failed:", profileError.message);
+    console.error("Customer profile creation failed:", {
+      code: profileError.code || "DATABASE_ERROR",
+    });
     await serviceClient.auth.admin.deleteUser(data.user.id);
     await authClient.auth.signOut();
     if (profileError.code === "23505") {

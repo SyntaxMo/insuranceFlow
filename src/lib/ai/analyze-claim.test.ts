@@ -76,6 +76,21 @@ describe("analyzeClaimWithOpenRouter", () => {
     expect(saveClaimAnalysisMock).toHaveBeenCalledWith("claim-1", expect.objectContaining({ summary: validPayload.summary }));
   });
 
+  it("does not send claim, policy, plate, or account identifiers to OpenRouter", async () => {
+    openRouterSendMock.mockResolvedValue(providerResponse());
+
+    await analyzeClaimWithOpenRouter("claim-1");
+
+    const userContent = openRouterSendMock.mock.calls[0][0].chatRequest.messages[1].content;
+    const serialized = JSON.stringify(userContent);
+    expect(serialized).toContain("Rear impact");
+    expect(serialized).toContain("Toyota");
+    expect(serialized).not.toContain("CLM-1");
+    expect(serialized).not.toContain("MOT-1");
+    expect(serialized).not.toContain("927410");
+    expect(serialized).not.toContain("claim-1");
+  });
+
   it("retries a transient provider-capacity failure once and then succeeds", async () => {
     openRouterSendMock.mockRejectedValueOnce(capacityError()).mockResolvedValueOnce(providerResponse());
     await expect(analyzeClaimWithOpenRouter("claim-1")).resolves.toEqual(expect.objectContaining({ summary: validPayload.summary }));

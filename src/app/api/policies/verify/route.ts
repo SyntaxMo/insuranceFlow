@@ -23,7 +23,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, policy: result.policy });
   } catch (err) {
-    console.error("POST /api/policies/verify failed:", err);
+    console.error("POST /api/policies/verify failed:", {
+      errorType: err instanceof Error ? err.name : "UnknownError",
+    });
     return NextResponse.json(
       {
         ok: false,

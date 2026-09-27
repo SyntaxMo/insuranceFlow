@@ -5,7 +5,7 @@ import { ClaimAnalysisError, CLAIM_AI_ANALYSES_GRANT_SQL } from "@/lib/ai/errors
 import { parseClaimAnalysis } from "@/lib/ai/schema";
 import type { ClaimAnalysisResult } from "@/types/ai-analysis";
 import { CLAIM_AI_MODEL } from "@/types/ai-analysis";
-import { redactSecrets, safeErrorDetails } from "@/lib/ai/debug";
+import { safeErrorDetails } from "@/lib/ai/debug";
 
 interface ClaimAiAnalysisRow {
   id: string;
@@ -32,7 +32,9 @@ function isPermissionError(message: string): boolean {
 }
 
 function throwStoreError(action: "read" | "write", message: string): never {
-  console.error(`[claim-analysis] claim_ai_analyses ${action} failed:`, redactSecrets(message));
+  console.error(`[claim-analysis] claim_ai_analyses ${action} failed`, {
+    category: isPermissionError(message) ? "PERMISSION" : "DATABASE",
+  });
   if (isPermissionError(message)) {
     throw new ClaimAnalysisError(
       "The AI analysis table exists, but this app cannot read or write it yet. Additional Supabase grants are required.",
@@ -75,9 +77,7 @@ export async function getSavedClaimAnalysis(
       normalizedModel === "placeholder" ||
       normalizedModel === "demo"
     ) {
-      console.warn("[claim-analysis] ignored non-model saved analysis:", {
-        claimId,
-      });
+      console.warn("[claim-analysis] ignored non-model saved analysis");
       return null;
     }
     return parseClaimAnalysis(

@@ -37,7 +37,7 @@ export async function removeLinkedPolicyAction(
   } catch (error) {
     console.error(
       "Policy unlink exception:",
-      error instanceof Error ? error.message : "Unknown server error",
+      { errorType: error instanceof Error ? error.name : "UnknownError" },
     );
     return { message: "We couldn't remove this policy right now. Please try again." };
   }

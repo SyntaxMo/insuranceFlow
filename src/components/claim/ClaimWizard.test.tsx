@@ -151,6 +151,8 @@ describe("ClaimWizard saved policy selection", () => {
     const body = request.body as FormData;
     expect(body.get("policyId")).toBe(directPolicy.policyId);
     expect(body.get("policyNumber")).toBeNull();
+    expect(body.get("email")).toBeNull();
+    expect(body.get("phone")).toBeNull();
     expect(body.get("repairEstimate")).toBe(repair);
     expect(body.getAll("accidentPhotos")).toEqual([photo]);
     expect(routerPushMock).toHaveBeenCalledWith("/claim/success?claimNumber=CLM-2026-ABC123");

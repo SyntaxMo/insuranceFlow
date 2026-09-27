@@ -76,11 +76,9 @@ export function extractJsonObject(text: string): unknown {
     }
   }
 
-  console.error("[claim-analysis] JSON parse failed:",
-    lastError instanceof Error
-      ? { name: lastError.name, message: lastError.message }
-      : { message: String(lastError) },
-  );
+  console.error("[claim-analysis] JSON parse failed:", {
+    errorType: lastError instanceof Error ? lastError.name : "UnknownError",
+  });
   throw new ClaimAnalysisError(
     "The AI response was not valid JSON. Please try again.",
     502,
@@ -95,7 +93,10 @@ export function parseClaimAnalysis(
 ): ClaimAnalysisResult {
   const parsed = claimAnalysisPayloadSchema.safeParse(payload);
   if (!parsed.success) {
-    console.error("[claim-analysis] schema validation failed:", parsed.error.issues);
+    console.error("[claim-analysis] schema validation failed:", {
+      issueCount: parsed.error.issues.length,
+      paths: parsed.error.issues.map((issue) => issue.path.join(".")).slice(0, 20),
+    });
     throw new ClaimAnalysisError(
       "The AI response could not be validated. Please try again.",
       502,

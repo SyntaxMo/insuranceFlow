@@ -64,7 +64,7 @@ async function notificationSource(
     .eq("id", claimId)
     .maybeSingle();
   if (error || !data) {
-    console.error("Claim notification source lookup failed:", { claimId, stage: "notification_lookup" });
+    console.error("Claim notification source lookup failed:", { stage: "notification_lookup" });
     return null;
   }
   const claim = data as ClaimNotificationSource;
@@ -135,7 +135,6 @@ export async function runOfficerClaimAction(params: {
   });
   if (error || !Array.isArray(data) || !data[0]) {
     console.error("Officer claim transition failed:", {
-      claimId: params.claimId,
       action: params.action,
       code: error?.code || null,
     });
@@ -273,7 +272,6 @@ export async function submitCustomerClaimResponse(params: {
       await supabase.storage.from(bucket).remove(uploadedPaths);
     }
     console.error("Customer additional information submission failed:", {
-      claimId: params.claimId,
       stage: error instanceof Error ? error.message : "unknown",
     });
     return {

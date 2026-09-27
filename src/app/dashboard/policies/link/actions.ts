@@ -84,7 +84,7 @@ export async function lookupExistingPolicyAction(
   } catch (error) {
     console.error(
       "Existing policy lookup exception:",
-      error instanceof Error ? error.message : "Unknown server error",
+      { errorType: error instanceof Error ? error.name : "UnknownError" },
     );
     return { message: POLICY_LOOKUP_ERROR };
   }
@@ -133,7 +133,7 @@ export async function sendPolicyVerificationCodeAction(
   } catch (error) {
     console.error(
       "Policy verification send exception:",
-      error instanceof Error ? error.message : "Unknown server error",
+      { errorType: error instanceof Error ? error.name : "UnknownError" },
     );
     return {
       ..._previous,
@@ -183,7 +183,7 @@ export async function verifyPolicyCodeAction(
   } catch (error) {
     console.error(
       "Policy verification exception:",
-      error instanceof Error ? error.message : "Unknown server error",
+      { errorType: error instanceof Error ? error.name : "UnknownError" },
     );
     return { message: "We couldn't verify the code right now. Please try again." };
   }

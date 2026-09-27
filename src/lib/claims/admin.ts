@@ -7,8 +7,8 @@ import type {
   Claim,
   ClaimDetailView,
   ClaimDocument,
+  ClaimHistoryView,
   ClaimListItem,
-  ClaimStatusHistory,
   Policy,
 } from "@/types/database";
 
@@ -59,7 +59,9 @@ export async function listClaims(): Promise<{
     ]);
 
     if (error || historyError) {
-      console.error("listClaims failed:", error?.message || historyError?.message);
+      console.error("listClaims failed:", {
+        code: error?.code || historyError?.code || "DATABASE_ERROR",
+      });
       return { claims: [], error: "Unable to load claims right now. Please try again shortly." };
     }
 
@@ -107,7 +109,7 @@ type DetailPolicy = Policy & {
 };
 
 type DetailClaimRow = Claim & { policies?: DetailPolicy | DetailPolicy[] | null };
-type HistoryRow = ClaimStatusHistory & {
+type HistoryRow = ClaimHistoryView & {
   users?: { full_name: string | null } | Array<{ full_name: string | null }> | null;
 };
 
@@ -162,7 +164,7 @@ export async function getClaimById(
         .order("created_at", { ascending: true }),
       supabase
         .from("claim_status_history")
-        .select("id, claim_id, from_status, to_status, action, note, actor_user_id, actor_role, created_at, users (full_name)")
+        .select("id, action, note, created_at, users (full_name)")
         .eq("claim_id", claim.id)
         .order("created_at", { ascending: true }),
     ]);
@@ -174,13 +176,8 @@ export async function getClaimById(
     const customer = asSingle(policy.users);
     const historyRows = ((history || []) as HistoryRow[]).map((event) => ({
       id: event.id,
-      claim_id: event.claim_id,
-      from_status: event.from_status,
-      to_status: event.to_status,
       action: event.action,
       note: event.note,
-      actor_user_id: event.actor_user_id,
-      actor_role: event.actor_role,
       created_at: event.created_at,
       actorName: asSingle(event.users)?.full_name || null,
     }));

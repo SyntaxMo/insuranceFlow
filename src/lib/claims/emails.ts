@@ -197,7 +197,6 @@ export async function sendClaimSubmissionEmail(
     ...content,
     logContext: {
       kind: "CLAIM_SUBMITTED",
-      claimNumber: input.claimNumber,
     },
     idempotencyKey: `claim-submitted/${input.claimId}`,
   });
@@ -210,7 +209,6 @@ export async function sendClaimStatusEmail(input: ClaimEmailInput): Promise<bool
     ...content,
     logContext: {
       kind: input.kind,
-      claimNumber: input.claimNumber,
     },
   });
 }

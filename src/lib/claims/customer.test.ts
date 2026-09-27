@@ -151,6 +151,36 @@ describe("getCustomerDashboard", () => {
     expect(result.claims[0]?.vehicle?.make).toBe("Nissan");
   });
 
+  it("returns an explicit customer policy DTO without ownership or internal relation fields", async () => {
+    const links = eqResult({ data: [], error: null });
+    const direct = orderedEqResult({
+      data: [{
+        ...policy("policy-1", "POL-1", "Toyota"),
+        user_id: "internal-owner-id",
+        vehicle_id: "internal-vehicle-id",
+        created_at: "2026-01-01T00:00:00Z",
+      }],
+      error: null,
+    });
+    const claims = orderedInResult({ data: [], error: null });
+    const from = vi.fn()
+      .mockReturnValueOnce(links)
+      .mockReturnValueOnce(direct)
+      .mockReturnValueOnce(claims);
+    createServiceRoleClientMock.mockReturnValue({ from });
+
+    const result = await getCustomerDashboard("portal-user-id");
+
+    expect(result.policies[0]).not.toHaveProperty("user_id");
+    expect(result.policies[0]).not.toHaveProperty("vehicle_id");
+    expect(result.policies[0]).not.toHaveProperty("created_at");
+    expect(result.policies[0]).toMatchObject({
+      id: "policy-1",
+      policy_number: "POL-1",
+      accessType: "DIRECT",
+    });
+  });
+
   it("does not query claims when the customer has no direct or linked policies", async () => {
     const links = eqResult({ data: [], error: null });
     const direct = orderedEqResult({ data: [], error: null });
@@ -237,7 +267,7 @@ describe("getCustomerClaimDetails", () => {
     const result = await getCustomerClaimDetails("portal-user", "claim-1");
     expect(result.claim?.latestInformationRequest).toBe("Please upload the police report.");
     expect(result.claim?.history.map((event) => event.action)).toContain("REVIEW_RETURNED");
-    expect(result.claim?.history[0]?.actor_user_id).toBeNull();
+    expect(result.claim?.history[0]).not.toHaveProperty("actor_user_id");
     expect(result.claim?.history[2]?.note).toBeNull();
   });
 

@@ -24,7 +24,7 @@ export async function unlinkCustomerPolicy({
     .maybeSingle();
 
   if (linkError) {
-    console.error("Policy unlink authorization failed:", linkError.message);
+    console.error("Policy unlink authorization failed:", { code: linkError.code || "DATABASE_ERROR" });
     return { ok: false, reason: "database" };
   }
   if (!link) return { ok: false, reason: "not_linked" };
@@ -36,7 +36,7 @@ export async function unlinkCustomerPolicy({
     .maybeSingle();
 
   if (policyError) {
-    console.error("Policy unlink ownership check failed:", policyError.message);
+    console.error("Policy unlink ownership check failed:", { code: policyError.code || "DATABASE_ERROR" });
     return { ok: false, reason: "database" };
   }
   if (!policy || policy.user_id === portalUserId) {
@@ -49,7 +49,7 @@ export async function unlinkCustomerPolicy({
     .eq("policy_id", policyId);
 
   if (claimError) {
-    console.error("Policy unlink claim check failed:", claimError.message);
+    console.error("Policy unlink claim check failed:", { code: claimError.code || "DATABASE_ERROR" });
     return { ok: false, reason: "database" };
   }
 
@@ -68,7 +68,7 @@ export async function unlinkCustomerPolicy({
     .maybeSingle();
 
   if (deleteError) {
-    console.error("Policy unlink failed:", deleteError.message);
+    console.error("Policy unlink failed:", { code: deleteError.code || "DATABASE_ERROR" });
     return { ok: false, reason: "database" };
   }
   if (!removed) return { ok: false, reason: "not_linked" };

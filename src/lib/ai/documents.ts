@@ -59,11 +59,10 @@ export async function prepareClaimDocuments(
 
     if (error || !data) {
       console.error("[claim-analysis] document download failed:", {
-        documentId: doc.id,
         documentType: doc.documentType,
         error: error
           ? safeErrorDetails(error)
-          : { message: "No data returned" },
+          : { name: "MissingStorageData" },
       });
       prepared.push({
         id: doc.id,

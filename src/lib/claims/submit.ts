@@ -97,7 +97,7 @@ async function uploadDocument(params: {
   });
 
   if (error) {
-    console.error("Storage upload failed:", error.message);
+    console.error("Storage upload failed:", { code: error.name || "STORAGE_ERROR" });
     return {
       error: "We could not upload one of your documents. Please try again.",
     };
@@ -159,7 +159,7 @@ export async function submitClaim(
   const claim = Array.isArray(createdClaims) ? createdClaims[0] : null;
 
   if (claimError || !claim) {
-    console.error("Claim insert failed:", claimError?.message);
+    console.error("Claim insert failed:", { code: claimError?.code || "DATABASE_ERROR" });
     return {
       ok: false,
       error:
@@ -190,14 +190,16 @@ export async function submitClaim(
       });
 
       if (docError) {
-        console.error("claim_documents insert failed:", docError.message);
+        console.error("claim_documents insert failed:", { code: docError.code || "DATABASE_ERROR" });
         throw new Error(
           "We could not save your document details. Please try again.",
         );
       }
     }
   } catch (err) {
-    console.error("Claim document pipeline failed:", err);
+    console.error("Claim document pipeline failed:", {
+      stage: err instanceof Error && err.message === "upload" ? "storage_upload" : "metadata_or_cleanup",
+    });
 
     if (uploadedPaths.length > 0) {
       await supabase.storage.from(getStorageBucket()).remove(uploadedPaths);
@@ -230,14 +232,12 @@ export async function submitClaim(
     });
   } catch (error) {
     console.error("Claim submission confirmation email threw unexpectedly:", {
-      claimId: claim.claim_id,
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }
 
   if (!emailSent) {
     console.error("Claim submission confirmation email was not delivered:", {
-      claimId: claim.claim_id,
       stage: "post_submission_notification",
     });
   }

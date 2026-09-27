@@ -42,7 +42,9 @@ export async function POST(
       );
     }
 
-    console.error("POST /api/admin/claims/[id]/analyze failed:", err);
+    console.error("POST /api/admin/claims/[id]/analyze failed:", {
+      errorType: err instanceof Error ? err.name : "UnknownError",
+    });
     return NextResponse.json(
       { error: "Unable to analyze this claim right now." },
       { status: 500 },

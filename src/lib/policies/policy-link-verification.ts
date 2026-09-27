@@ -77,7 +77,9 @@ export async function verifyPolicyLinkCode({
     .maybeSingle();
 
   if (error) {
-    console.error("Policy verification lookup failed:", error.message);
+    console.error("Policy verification lookup failed:", {
+      code: error.code || "DATABASE_ERROR",
+    });
     return { ok: false, reason: "database" };
   }
 
@@ -107,7 +109,9 @@ export async function verifyPolicyLinkCode({
       },
     );
     if (incrementError) {
-      console.error("Policy verification attempt update failed:", incrementError.message);
+      console.error("Policy verification attempt update failed:", {
+        code: incrementError.code || "DATABASE_ERROR",
+      });
       return { ok: false, reason: "database" };
     }
     if (typeof attemptCount !== "number") return { ok: false, reason: "invalid" };
@@ -125,7 +129,9 @@ export async function verifyPolicyLinkCode({
     },
   );
   if (completionError) {
-    console.error("Policy linking transaction failed:", completionError.message);
+    console.error("Policy linking transaction failed:", {
+      code: completionError.code || "DATABASE_ERROR",
+    });
     return { ok: false, reason: "database" };
   }
 

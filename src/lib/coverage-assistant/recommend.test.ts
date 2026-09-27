@@ -74,6 +74,16 @@ describe("recommendCoverage", () => {
     expect(request.messages[1].content).not.toContain("test-openrouter-key");
   });
 
+  it("rejects identity and session fields instead of transmitting them", async () => {
+    await expect(recommendCoverage({
+      ...input,
+      customerEmail: "customer@example.com",
+      authUserId: "auth-user-123",
+    } as never)).rejects.toMatchObject({ status: 400 });
+
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
   it("retries the exact mixed case once when OpenRouter wraps an upstream 502 in a successful HTTP response", async () => {
     const providerEnvelopeError = Object.assign(new Error("Response validation failed"), {
       name: "ResponseValidationError",

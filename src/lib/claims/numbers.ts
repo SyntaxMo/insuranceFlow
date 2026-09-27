@@ -19,7 +19,9 @@ export async function createUniqueClaimNumber(
       .maybeSingle();
 
     if (error) {
-      console.error("Claim number uniqueness check failed:", error.message);
+      console.error("Claim number uniqueness check failed:", {
+        code: error.code || "DATABASE_ERROR",
+      });
       return candidate;
     }
 

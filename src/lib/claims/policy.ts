@@ -57,7 +57,7 @@ export async function verifyPolicyByNumber(
       .maybeSingle();
 
     if (error) {
-      console.error("Policy verification failed:", error.message);
+      console.error("Policy verification failed:", { code: error.code || "DATABASE_ERROR" });
       return {
         ok: false,
         code: "SERVER",
@@ -83,7 +83,7 @@ export async function verifyPolicyByNumber(
         .maybeSingle();
 
       if (linkError) {
-        console.error("Linked policy authorization failed:", linkError.message);
+        console.error("Linked policy authorization failed:", { code: linkError.code || "DATABASE_ERROR" });
         return {
           ok: false,
           code: "SERVER",
@@ -101,7 +101,9 @@ export async function verifyPolicyByNumber(
 
     return evaluatePolicyEligibility(data as Policy);
   } catch (err) {
-    console.error("Policy verification exception:", err);
+    console.error("Policy verification exception:", {
+      errorType: err instanceof Error ? err.name : "UnknownError",
+    });
     return {
       ok: false,
       code: "SERVER",
@@ -154,7 +156,7 @@ export async function verifyPolicyById(
       .maybeSingle();
 
     if (error) {
-      console.error("Policy ID verification failed:", error.message);
+      console.error("Policy ID verification failed:", { code: error.code || "DATABASE_ERROR" });
       return {
         ok: false,
         code: "SERVER",
@@ -179,7 +181,7 @@ export async function verifyPolicyById(
         .maybeSingle();
 
       if (linkError) {
-        console.error("Selected policy authorization failed:", linkError.message);
+        console.error("Selected policy authorization failed:", { code: linkError.code || "DATABASE_ERROR" });
         return {
           ok: false,
           code: "SERVER",
@@ -197,7 +199,9 @@ export async function verifyPolicyById(
 
     return evaluatePolicyEligibility(data as Policy);
   } catch (error) {
-    console.error("Policy ID verification exception:", error);
+    console.error("Policy ID verification exception:", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
     return {
       ok: false,
       code: "SERVER",

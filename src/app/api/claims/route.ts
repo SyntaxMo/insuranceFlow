@@ -26,7 +26,9 @@ export async function POST(request: Request) {
       claimNumber: result.claimNumber,
     });
   } catch (err) {
-    console.error("POST /api/claims failed:", err);
+    console.error("POST /api/claims failed:", {
+      errorType: err instanceof Error ? err.name : "UnknownError",
+    });
     return NextResponse.json(
       {
         ok: false,

@@ -1,12 +1,12 @@
 import { formatDateTime } from "@/lib/format";
 import { historyActionLabel } from "@/lib/claims/workflow";
-import type { ClaimStatusHistory } from "@/types/database";
+import type { ClaimHistoryView } from "@/types/database";
 
 export function ClaimHistory({
   history,
   showActor = false,
 }: {
-  history: Array<ClaimStatusHistory & { actorName?: string | null }>;
+  history: ClaimHistoryView[];
   showActor?: boolean;
 }) {
   if (history.length === 0) return <p className="text-sm text-slate-600">No claim history is available yet.</p>;

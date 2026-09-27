@@ -44,7 +44,9 @@ export async function handleAuthConfirmation(
       flowId ? { flowId } : undefined,
     );
     if (error) {
-      console.error("Email confirmation code exchange failed:", error.message);
+      console.error("Email confirmation code exchange failed:", {
+        code: error.code || "AUTH_ERROR",
+      });
       return failureRedirect(
         request,
         looksExpired(error.message) ? "expired-confirmation" : "session-exchange",
@@ -56,7 +58,9 @@ export async function handleAuthConfirmation(
       type,
     });
     if (error) {
-      console.error("Email confirmation token verification failed:", error.message);
+      console.error("Email confirmation token verification failed:", {
+        code: error.code || "AUTH_ERROR",
+      });
       return failureRedirect(
         request,
         looksExpired(error.message) ? "expired-confirmation" : "invalid-confirmation",
@@ -74,7 +78,7 @@ export async function handleAuthConfirmation(
   if (userError || !user) {
     console.error(
       "Email confirmation session validation failed:",
-      userError?.message || "No authenticated user returned",
+      { code: userError?.code || "NO_AUTHENTICATED_USER" },
     );
     return failureRedirect(request, "session-exchange");
   }

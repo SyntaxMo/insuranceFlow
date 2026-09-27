@@ -116,10 +116,9 @@ export function ProtectedSessionSync({
           router.refresh();
           return;
         }
-        console.error(
-          "Protected session revalidation failed.",
-          error instanceof Error ? error.message : "Unknown error",
-        );
+        console.error("Protected session revalidation failed.", {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        });
       }
     },
     [area, navigateTo, router],

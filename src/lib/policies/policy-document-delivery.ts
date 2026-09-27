@@ -90,7 +90,7 @@ export async function getPolicyDocumentMetadata(
     .maybeSingle();
 
   if (error) {
-    console.error("Policy document metadata lookup failed:", { policyId, stage: "metadata_lookup" });
+    console.error("Policy document metadata lookup failed:", { stage: "metadata_lookup" });
     return null;
   }
   return (data as PolicyDocumentMetadata | null) ?? null;
@@ -111,7 +111,6 @@ async function sendPolicyIssuedEmail({
   const recipient = customer.email?.trim();
   if (!apiKey || !recipient) {
     console.error("Policy issuance email configuration unavailable:", {
-      policyId: pdfData.policy.policyNumber,
       hasApiKey: Boolean(apiKey),
       hasRecipient: Boolean(recipient),
     });
@@ -167,14 +166,13 @@ async function sendPolicyIssuedEmail({
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
-      console.error("Policy issuance email failed:", { provider: "Resend", status: response.status, policyId: pdfData.policy.policyNumber });
+      console.error("Policy issuance email failed:", { provider: "Resend", status: response.status });
       return false;
     }
-    const responseBody = await response.json().catch(() => null) as { id?: string } | null;
-    console.info("Policy issuance email accepted:", { provider: "Resend", responseId: responseBody?.id ?? null, policyId: pdfData.policy.policyNumber });
+    console.info("Policy issuance email accepted:", { provider: "Resend" });
     return true;
   } catch (error) {
-    console.error("Policy issuance email exception:", { provider: "Resend", errorType: error instanceof Error ? error.name : "UnknownError", policyId: pdfData.policy.policyNumber });
+    console.error("Policy issuance email exception:", { provider: "Resend", errorType: error instanceof Error ? error.name : "UnknownError" });
     return false;
   }
 }
@@ -196,7 +194,7 @@ export async function deliverIssuedPolicyDocument({
     .maybeSingle();
 
   if (error || !data) {
-    console.error("Issued policy document source lookup failed:", { policyId, stage: "policy_lookup" });
+    console.error("Issued policy document source lookup failed:", { stage: "policy_lookup" });
     return { documentAvailable: false, emailSent: false, warning: POLICY_DOCUMENT_DELIVERY_WARNING };
   }
 
@@ -204,7 +202,7 @@ export async function deliverIssuedPolicyDocument({
   const vehicle = oneVehicle(policy);
   const annualPremium = Number(policy.annual_premium);
   if (!vehicle || !Number.isFinite(annualPremium)) {
-    console.error("Issued policy document source is incomplete:", { policyId, stage: "source_validation" });
+    console.error("Issued policy document source is incomplete:", { stage: "source_validation" });
     return { documentAvailable: false, emailSent: false, warning: POLICY_DOCUMENT_DELIVERY_WARNING };
   }
 
@@ -240,7 +238,7 @@ export async function deliverIssuedPolicyDocument({
   try {
     pdfBytes = await generatePolicyPdf(pdfData);
   } catch (generationError) {
-    console.error("Policy PDF generation failed:", { policyId, stage: "pdf_generation", errorType: generationError instanceof Error ? generationError.name : "UnknownError" });
+    console.error("Policy PDF generation failed:", { stage: "pdf_generation", errorType: generationError instanceof Error ? generationError.name : "UnknownError" });
     return { documentAvailable: false, emailSent: false, warning: POLICY_DOCUMENT_DELIVERY_WARNING };
   }
 
@@ -255,7 +253,7 @@ export async function deliverIssuedPolicyDocument({
     });
 
   if (uploadError) {
-    console.error("Policy document upload failed:", { policyId, stage: "storage_upload" });
+    console.error("Policy document upload failed:", { stage: "storage_upload" });
     return { documentAvailable: false, emailSent: false, warning: POLICY_DOCUMENT_DELIVERY_WARNING };
   }
 
@@ -273,7 +271,7 @@ export async function deliverIssuedPolicyDocument({
       const concurrent = await getPolicyDocumentMetadata(policyId, supabase);
       if (concurrent) return { documentAvailable: true, emailSent: false };
     }
-    console.error("Policy document metadata creation failed:", { policyId, stage: "metadata_insert" });
+    console.error("Policy document metadata creation failed:", { stage: "metadata_insert" });
     return { documentAvailable: false, emailSent: false, warning: POLICY_DOCUMENT_DELIVERY_WARNING };
   }
 

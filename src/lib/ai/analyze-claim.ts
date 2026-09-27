@@ -30,7 +30,6 @@ const MIN_RETRY_BUDGET_MS = 1_000;
 
 function requireOpenRouterKey(): string {
   const key = process.env.OPENROUTER_API_KEY?.trim();
-  console.info("[claim-analysis] OPENROUTER_API_KEY configured:", Boolean(key));
   if (!key) {
     throw new ClaimAnalysisError(
       "AI analysis is not configured. The OpenRouter API key is missing.",
@@ -127,18 +126,15 @@ function buildUserText(
     "Submitted claim record:",
     JSON.stringify(
       {
-        claimNumber: claim.claimNumber,
         accidentDate: claim.accidentDate,
         accidentLocation: claim.accidentLocation,
         accidentDescription: claim.description,
-        policyNumber: claim.policy.policyNumber,
         coverageType: claim.policy.coverageType,
         excessAmount: claim.policy.excessAmount,
         coverageLimit: claim.policy.coverageLimit,
         vehicleMake: claim.policy.vehicle.make,
         vehicleModel: claim.policy.vehicle.model,
         vehicleYear: claim.policy.vehicle.year,
-        plateNumber: claim.policy.vehicle.plateNumber,
       },
       null,
       2,
@@ -158,19 +154,18 @@ export async function analyzeClaimWithOpenRouter(
 ): Promise<ClaimAnalysisResult> {
   const savedAnalysis = await getSavedClaimAnalysis(claimId);
   if (savedAnalysis) {
-    console.info("[claim-analysis] using saved analysis:", { claimId });
+    console.info("[claim-analysis] using saved analysis");
     return savedAnalysis;
   }
 
   const apiKey = requireOpenRouterKey();
   const analysisStartedAt = Date.now();
-  console.info("[claim-analysis] starting:", { claimId, inputMode, model: CLAIM_AI_MODEL });
+  console.info("[claim-analysis] starting:", { inputMode, model: CLAIM_AI_MODEL });
   const { claim, error } = await getClaimById(claimId);
 
   if (!claim) {
     console.error("[claim-analysis] claim loading failed:", {
-      claimId,
-      message: error || "Claim not found.",
+      category: error ? "CLAIM_LOAD_ERROR" : "CLAIM_NOT_FOUND",
     });
     throw new ClaimAnalysisError(
       error || "Claim not found.",
@@ -178,14 +173,13 @@ export async function analyzeClaimWithOpenRouter(
     );
   }
 
-  console.info("[claim-analysis] claim loaded:", { claimId: claim.id });
+  console.info("[claim-analysis] claim loaded");
   const documentStartedAt = Date.now();
   let documents: Awaited<ReturnType<typeof prepareClaimDocuments>>;
   try {
     documents = inputMode === "text" ? [] : await prepareClaimDocuments(claim);
   } catch {
     console.error("[claim-analysis] document processing failed:", {
-      claimId,
       category: "DOCUMENT_PROCESSING_ERROR",
       durationMs: Date.now() - documentStartedAt,
     });
@@ -257,7 +251,6 @@ export async function analyzeClaimWithOpenRouter(
           throw timeout;
         }
         console.info("[claim-analysis] provider attempt starting:", {
-          claimId,
           model: CLAIM_AI_MODEL,
           attempt,
           timeoutMs,
@@ -302,7 +295,6 @@ export async function analyzeClaimWithOpenRouter(
           MIN_RETRY_BUDGET_MS,
         onFailure: (info, attempt) => {
           console.error("[claim-analysis] provider attempt failed:", {
-            claimId,
             model: CLAIM_AI_MODEL,
             attempt,
             durationMs: Date.now() - providerStartedAt,
@@ -316,7 +308,6 @@ export async function analyzeClaimWithOpenRouter(
   }
 
   console.info("[claim-analysis] provider response received:", {
-    claimId,
     model: CLAIM_AI_MODEL,
     durationMs: Date.now() - providerStartedAt,
   });
@@ -335,7 +326,6 @@ export async function analyzeClaimWithOpenRouter(
   console.info("[claim-analysis] JSON parsed and schema validated.");
   const saved = await saveClaimAnalysis(claim.id, analysis);
   console.info("[claim-analysis] analysis saved:", {
-    claimId: claim.id,
     totalDurationMs: Date.now() - analysisStartedAt,
   });
   return saved;

@@ -87,7 +87,9 @@ export async function resolveExistingPolicyMatch(
     .maybeSingle();
 
   if (error) {
-    console.error("Existing policy lookup failed:", error.message);
+    console.error("Existing policy lookup failed:", {
+      code: error.code || "DATABASE_ERROR",
+    });
     return null;
   }
 

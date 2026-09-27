@@ -12,13 +12,8 @@ describe("ClaimHistory", () => {
         history={[
           {
             id: "history-1",
-            claim_id: "claim-1",
-            from_status: "UNDER_REVIEW",
-            to_status: "SUBMITTED",
             action: "REVIEW_RETURNED",
             note: null,
-            actor_user_id: "officer-1",
-            actor_role: "CLAIMS_OFFICER",
             actorName: "Claims Officer",
             created_at: "2026-09-16T10:00:00Z",
           },

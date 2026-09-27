@@ -26,7 +26,7 @@ export async function GET(
       ? { download: document.fileName }
       : undefined);
   if (error || !data?.signedUrl) {
-    console.error("Claim document signed URL failed:", { claimId: id, documentId });
+    console.error("Claim document signed URL failed:", { stage: "signed_url" });
     return NextResponse.json({ error: "Claim document unavailable." }, { status: 503 });
   }
   return NextResponse.redirect(data.signedUrl, 307);

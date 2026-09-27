@@ -6,8 +6,8 @@ import { evaluatePolicyEligibility } from "@/lib/claims/policy-eligibility";
 import type {
   Claim,
   ClaimPolicyOption,
+  ClaimHistoryView,
   ClaimHistoryAction,
-  ClaimStatusHistory,
   Policy,
   Vehicle,
 } from "@/types/database";
@@ -46,7 +46,7 @@ export type CustomerClaimDetail = CustomerClaim & Pick<
   "accident_location" | "description" | "updated_at"
 > & {
   policyNumber: string;
-  history: ClaimStatusHistory[];
+  history: ClaimHistoryView[];
   latestInformationRequest: string | null;
   rejectionReason: string | null;
 };
@@ -81,6 +81,46 @@ function oneVehicle(
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
+const CUSTOMER_POLICY_COLUMNS = `
+  id, policy_number, status, coverage_type, start_date, end_date,
+  excess_amount, coverage_limit, annual_premium, purchase_request_id,
+  vehicles (id, make, model, year, plate_number, vin)
+`;
+
+type CustomerPolicyRow = Omit<CustomerPolicy, "accessType"> & {
+  user_id?: string;
+};
+
+function customerPolicyDto(
+  row: CustomerPolicyRow,
+  accessType: CustomerPolicyAccess,
+): CustomerPolicy {
+  const vehicles = row.vehicles
+    ? (Array.isArray(row.vehicles) ? row.vehicles : [row.vehicles]).map((vehicle) => ({
+        id: vehicle.id,
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        plate_number: vehicle.plate_number,
+        vin: vehicle.vin ?? null,
+      }))
+    : null;
+  return {
+    id: row.id,
+    policy_number: row.policy_number,
+    status: row.status,
+    coverage_type: row.coverage_type,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    excess_amount: row.excess_amount,
+    coverage_limit: row.coverage_limit,
+    purchase_request_id: row.purchase_request_id ?? null,
+    annual_premium: row.annual_premium ?? null,
+    accessType,
+    vehicles,
+  };
+}
+
 export async function getAccessibleCustomerPolicies(userId: string): Promise<{
   policies: CustomerPolicy[];
   error: string | null;
@@ -92,18 +132,18 @@ export async function getAccessibleCustomerPolicies(userId: string): Promise<{
     .eq("portal_user_id", userId);
 
   if (linkError) {
-    console.error("Customer policy links read failed:", linkError.message);
+    console.error("Customer policy links read failed:", { code: linkError.code || "DATABASE_ERROR" });
     return { policies: [], error: "Unable to load your policies right now." };
   }
 
   const { data: directPolicies, error: directPolicyError } = await supabase
     .from("policies")
-    .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
+    .select(CUSTOMER_POLICY_COLUMNS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (directPolicyError) {
-    console.error("Customer policies read failed:", directPolicyError.message);
+    console.error("Customer policies read failed:", { code: directPolicyError.code || "DATABASE_ERROR" });
     return { policies: [], error: "Unable to load your policies right now." };
   }
 
@@ -112,25 +152,22 @@ export async function getAccessibleCustomerPolicies(userId: string): Promise<{
   if (linkedPolicyIds.length > 0) {
     const { data, error } = await supabase
       .from("policies")
-      .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
+      .select(CUSTOMER_POLICY_COLUMNS)
       .in("id", linkedPolicyIds)
       .order("created_at", { ascending: false });
     if (error) {
-      console.error("Linked customer policies read failed:", error.message);
+      console.error("Linked customer policies read failed:", { code: error.code || "DATABASE_ERROR" });
       return { policies: [], error: "Unable to load your policies right now." };
     }
-    linkedPolicies = (data || []).map((policy) => ({
-      ...(policy as Omit<CustomerPolicy, "accessType">),
-      accessType: "LINKED" as const,
-    }));
+    linkedPolicies = (data || []).map((policy) =>
+      customerPolicyDto(policy as CustomerPolicyRow, "LINKED"),
+    );
   }
 
   const policyMap = new Map<string, CustomerPolicy>();
   for (const policy of directPolicies || []) {
-    policyMap.set(policy.id, {
-      ...(policy as Omit<CustomerPolicy, "accessType">),
-      accessType: "DIRECT",
-    });
+    const dto = customerPolicyDto(policy as CustomerPolicyRow, "DIRECT");
+    policyMap.set(dto.id, dto);
   }
   for (const policy of linkedPolicies) {
     if (!policyMap.has(policy.id)) policyMap.set(policy.id, policy);
@@ -180,7 +217,7 @@ export async function getCustomerDashboard(userId: string): Promise<{
     .order("created_at", { ascending: false });
 
   if (claimError) {
-    console.error("Customer claims read failed:", claimError.message);
+    console.error("Customer claims read failed:", { code: claimError.code || "DATABASE_ERROR" });
     return { policies: accessiblePolicies, claims: [], error: "Unable to load your claims right now." };
   }
 
@@ -217,12 +254,12 @@ export async function getCustomerPolicyDetails(
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("policies")
-    .select(`*, vehicles (id, make, model, year, plate_number, vin)`)
+    .select(`user_id, ${CUSTOMER_POLICY_COLUMNS}`)
     .eq("id", policyId)
     .maybeSingle();
 
   if (error) {
-    console.error("Customer policy detail read failed:", error.message);
+    console.error("Customer policy detail read failed:", { code: error.code || "DATABASE_ERROR" });
     return { policy: null, error: "Unable to load this policy right now." };
   }
   if (!data) return { policy: null, error: null };
@@ -230,8 +267,7 @@ export async function getCustomerPolicyDetails(
   if (data.user_id === userId) {
     return {
       policy: {
-        ...(data as Omit<CustomerPolicy, "accessType">),
-        accessType: "DIRECT",
+        ...customerPolicyDto(data as CustomerPolicyRow, "DIRECT"),
       },
       error: null,
     };
@@ -245,15 +281,14 @@ export async function getCustomerPolicyDetails(
     .maybeSingle();
 
   if (linkError) {
-    console.error("Customer policy detail authorization failed:", linkError.message);
+    console.error("Customer policy detail authorization failed:", { code: linkError.code || "DATABASE_ERROR" });
     return { policy: null, error: "Unable to load this policy right now." };
   }
   if (!link) return { policy: null, error: null };
 
   return {
     policy: {
-      ...(data as Omit<CustomerPolicy, "accessType">),
-      accessType: "LINKED",
+      ...customerPolicyDto(data as CustomerPolicyRow, "LINKED"),
     },
     error: null,
   };
@@ -270,7 +305,7 @@ export async function getCustomerClaimDetails(
     .eq("id", claimId)
     .maybeSingle();
   if (error) {
-    console.error("Customer claim detail read failed:", error.message);
+    console.error("Customer claim detail read failed:", { code: error.code || "DATABASE_ERROR" });
     return { claim: null, error: "Unable to load this claim right now." };
   }
   if (!data) return { claim: null, error: null };
@@ -281,22 +316,23 @@ export async function getCustomerClaimDetails(
 
   const { data: history, error: historyError } = await supabase
     .from("claim_status_history")
-    .select("id, claim_id, from_status, to_status, action, note, actor_user_id, actor_role, created_at")
+    .select("id, action, note, created_at")
     .eq("claim_id", claimId)
     .order("created_at", { ascending: true });
   if (historyError) {
-    console.error("Customer claim history read failed:", historyError.message);
+    console.error("Customer claim history read failed:", { code: historyError.code || "DATABASE_ERROR" });
     return { claim: null, error: "Unable to load this claim's history right now." };
   }
 
   const vehicle = oneVehicle(authorization.policy.vehicles);
-  const visibleHistory = ((history || []) as ClaimStatusHistory[])
+  const visibleHistory = ((history || []) as ClaimHistoryView[])
     .filter((event) =>
       CUSTOMER_VISIBLE_HISTORY_ACTIONS.has(event.action as ClaimHistoryAction),
     )
     .map((event) => ({
-      ...event,
-      actor_user_id: null,
+      id: event.id,
+      action: event.action,
+      created_at: event.created_at,
       note: ["MORE_INFO_REQUESTED", "CUSTOMER_INFO_SUBMITTED", "CLAIM_REJECTED"].includes(event.action)
         ? event.note
         : null,

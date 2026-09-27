@@ -111,6 +111,11 @@ export interface ClaimStatusHistory {
   created_at: string;
 }
 
+export type ClaimHistoryView = Pick<
+  ClaimStatusHistory,
+  "id" | "action" | "note" | "created_at"
+> & { actorName?: string | null };
+
 export interface VerifiedPolicySummary {
   policyId: string;
   policyNumber: string;
@@ -170,5 +175,5 @@ export interface ClaimDetailView {
     mimeType: string | null;
     signedUrl: string | null;
   }>;
-  history: Array<ClaimStatusHistory & { actorName: string | null }>;
+  history: ClaimHistoryView[];
 }

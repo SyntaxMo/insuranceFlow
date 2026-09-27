@@ -101,7 +101,9 @@ export async function issueDemoPolicy(
   });
 
   if (error) {
-    console.error("Demo policy issuance failed:", error.message);
+    console.error("Demo policy issuance failed:", {
+      code: error.code || "DATABASE_ERROR",
+    });
     const migrationMissing = error.code === "PGRST202" || error.message.includes("issue_demo_motor_policy");
     return {
       status: "error",
@@ -138,7 +140,6 @@ export async function issueDemoPolicy(
     });
   } catch (deliveryError) {
     console.error("Post-issuance policy delivery failed:", {
-      policyId: String(result.issued_policy_id),
       errorType: deliveryError instanceof Error ? deliveryError.name : "UnknownError",
     });
   }

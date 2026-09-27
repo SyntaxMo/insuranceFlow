@@ -351,8 +351,6 @@ export function ClaimWizard({
       formData.set("accidentDate", accident.accidentDate);
       formData.set("accidentLocation", accident.accidentLocation);
       formData.set("description", accident.description);
-      formData.set("email", accident.email);
-      formData.set("phone", accident.phone);
 
       if (files.policeReport) {
         formData.set("policeReport", files.policeReport);
