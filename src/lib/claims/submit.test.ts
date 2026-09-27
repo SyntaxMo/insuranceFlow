@@ -78,6 +78,7 @@ describe("submitClaim selected policy flow", () => {
 
   it("revalidates the selected policy ID and keeps the atomic claim/history and document pipeline", async () => {
     const upload = vi.fn().mockResolvedValue({ error: null });
+    const storageFrom = vi.fn(() => ({ upload, remove: vi.fn() }));
     const insert = vi.fn().mockResolvedValue({ error: null });
     const rpc = vi.fn().mockResolvedValue({
       data: [{ claim_id: "claim-id", claim_number: "CLM-2026-ABC123" }],
@@ -85,7 +86,7 @@ describe("submitClaim selected policy flow", () => {
     });
     mocks.createServiceRoleClient.mockReturnValue({
       rpc,
-      storage: { from: vi.fn(() => ({ upload, remove: vi.fn() })) },
+      storage: { from: storageFrom },
       from: vi.fn(() => ({ insert, delete: vi.fn() })),
     });
 
@@ -100,6 +101,17 @@ describe("submitClaim selected policy flow", () => {
       }),
     );
     expect(upload).toHaveBeenCalledTimes(2);
+    expect(storageFrom).toHaveBeenCalledWith("claim-documents");
+    expect(upload).toHaveBeenCalledWith(
+      expect.stringContaining("/repair_estimate-"),
+      expect.any(Buffer),
+      expect.objectContaining({ contentType: "application/pdf", upsert: false }),
+    );
+    expect(upload).toHaveBeenCalledWith(
+      expect.stringContaining("/accident_photo-"),
+      expect.any(Buffer),
+      expect.objectContaining({ contentType: "image/jpeg", upsert: false }),
+    );
     expect(insert).toHaveBeenCalledTimes(2);
     expect(mocks.sendClaimSubmissionEmail).toHaveBeenCalledTimes(1);
     expect(mocks.sendClaimSubmissionEmail).toHaveBeenCalledWith(expect.objectContaining({

@@ -29,6 +29,27 @@ describe("officer claim document route", () => {
     expect(getAuthorizedClaimDocumentMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a customer session before looking up or signing claim evidence", async () => {
+    getStaffForApiMock.mockResolvedValue(null);
+
+    const response = await GET(new Request("http://localhost/file"), { params: Promise.resolve({ id: "another-customer-claim", documentId: "doc-1" }) });
+
+    expect(response.status).toBe(403);
+    expect(getAuthorizedClaimDocumentMock).not.toHaveBeenCalled();
+    expect(createServiceRoleClientMock).not.toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it("does not create a signed URL when the stored document is not part of the authorized claim", async () => {
+    getAuthorizedClaimDocumentMock.mockResolvedValue(null);
+
+    const response = await GET(new Request("http://localhost/file"), { params: Promise.resolve({ id: "claim-1", documentId: "another-claim-document" }) });
+
+    expect(response.status).toBe(404);
+    expect(createServiceRoleClientMock).not.toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
   it("resolves the path by claim and document IDs instead of accepting a browser path", async () => {
     const response = await GET(new Request("http://localhost/file?path=attacker/secret.pdf"), { params: Promise.resolve({ id: "claim-1", documentId: "doc-1" }) });
     expect(response.status).toBe(307);
