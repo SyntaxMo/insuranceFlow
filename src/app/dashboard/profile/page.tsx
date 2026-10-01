@@ -6,11 +6,13 @@ import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink
 import { ChangeEmailControl } from "@/components/profile/ChangeEmailControl";
 import { ChangeFullNameControl } from "@/components/profile/ChangeFullNameControl";
 import { ChangePasswordControl } from "@/components/profile/ChangePasswordControl";
+import { DataDeletionControl } from "@/components/profile/DataDeletionControl";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
 import { getCustomerAccountSummary } from "@/lib/claims/customer";
 import { formatDate } from "@/lib/format";
+import { getCustomerDataDeletionRequest } from "@/lib/privacy/data-deletion";
 
 function ProfileAvatar() {
   return (
@@ -54,7 +56,10 @@ export default async function CustomerProfilePage({
   searchParams?: Promise<{ emailUpdated?: string; emailChangePending?: string }>;
 } = {}) {
   const profile = await requireCustomer();
-  const { summary, error } = await getCustomerAccountSummary(profile.id);
+  const [{ summary, error }, deletion] = await Promise.all([
+    getCustomerAccountSummary(profile.id),
+    getCustomerDataDeletionRequest(profile.id),
+  ]);
   const displayName = profile.full_name?.trim() || "Customer";
   const parameters = await searchParams;
   const email = profile.email?.trim() || "Not provided";
@@ -137,7 +142,8 @@ export default async function CustomerProfilePage({
       </section>
 
       <section className="mt-6" aria-labelledby="privacy-account-heading">
-        <Card className="sm:flex sm:items-center sm:justify-between sm:gap-8">
+        <Card>
+          <div className="sm:flex sm:items-center sm:justify-between sm:gap-8">
           <div>
             <h2 id="privacy-account-heading" className="font-[family-name:var(--font-display)] text-xl text-[var(--brand-navy)]">Privacy &amp; account</h2>
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">Review how this portfolio demonstration handles account information and simulated insurance activity.</p>
@@ -147,6 +153,8 @@ export default async function CustomerProfilePage({
             <Link href="/terms" className="rounded underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Terms</Link>
             <Link href="/disclaimer" className="rounded underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Disclaimer</Link>
           </nav>
+          </div>
+          <DataDeletionControl request={deletion.request} unavailable={deletion.unavailable} />
         </Card>
       </section>
     </div>

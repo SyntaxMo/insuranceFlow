@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireCustomer: vi.fn(),
   getCustomerAccountSummary: vi.fn(),
+  getCustomerDataDeletionRequest: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -13,6 +14,7 @@ vi.mock("@/lib/auth/session", () => ({ requireCustomer: mocks.requireCustomer })
 vi.mock("@/lib/claims/customer", () => ({
   getCustomerAccountSummary: mocks.getCustomerAccountSummary,
 }));
+vi.mock("@/lib/privacy/data-deletion", () => ({ getCustomerDataDeletionRequest: mocks.getCustomerDataDeletionRequest }));
 
 import CustomerProfilePage, { metadata } from "@/app/dashboard/profile/page";
 
@@ -28,6 +30,7 @@ const customer = {
 
 describe("CustomerProfilePage", () => {
   beforeEach(() => {
+    mocks.getCustomerDataDeletionRequest.mockResolvedValue({ request: null, unavailable: false });
     mocks.requireCustomer.mockResolvedValue(customer);
     mocks.getCustomerAccountSummary.mockResolvedValue({
       summary: { activePolicies: 2, openClaims: 1, totalClaims: 3 },
@@ -73,6 +76,16 @@ describe("CustomerProfilePage", () => {
     mocks.requireCustomer.mockResolvedValue({ ...customer, phone: null });
     render(await CustomerProfilePage());
     expect(screen.getByText("Not provided")).toBeTruthy();
+  });
+
+  it("shows the authenticated customer's pending deletion request instead of a new request action", async () => {
+    mocks.getCustomerDataDeletionRequest.mockResolvedValue({ request: { id: "request-id", status: "PENDING", createdAt: "2026-10-01", updatedAt: "2026-10-01", resolvedAt: null }, unavailable: false });
+    render(await CustomerProfilePage());
+    expect(mocks.getCustomerDataDeletionRequest).toHaveBeenCalledWith(customer.id);
+    expect(screen.getByText("Pending")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Cancel request" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Request data deletion" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Change password" })).toBeTruthy();
   });
 
   it("consolidates profile information into one Account details card", async () => {
