@@ -62,7 +62,6 @@ export async function synchronizeVerifiedProfileEmail(
 
   if (
     !verifiedEmail ||
-    profile.role !== "CUSTOMER" ||
     authUser.id !== profile.auth_user_id ||
     verifiedEmail === profileEmail
   ) {
@@ -103,9 +102,9 @@ export async function getAuthenticatedProfile(): Promise<AuthProfile | null> {
   return synchronized.profile;
 }
 
-export async function requireCustomer(): Promise<AuthProfile> {
+export async function requireCustomer(returnTo?: "settings"): Promise<AuthProfile> {
   const profile = await getAuthenticatedProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect(returnTo === "settings" ? "/login?next=settings" : "/login");
   if (isStaffRole(profile.role)) redirect("/admin");
   return profile;
 }

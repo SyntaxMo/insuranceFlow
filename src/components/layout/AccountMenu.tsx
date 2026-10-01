@@ -10,6 +10,7 @@ type AccountMenuProps = {
   accountEmail: string | null;
   profileHref: "/dashboard/profile" | "/admin/profile";
   fallbackName: "Customer" | "Staff";
+  settingsHref?: "/dashboard/settings";
 };
 
 export function AccountMenu({
@@ -17,6 +18,7 @@ export function AccountMenu({
   accountEmail,
   profileHref,
   fallbackName,
+  settingsHref,
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,7 @@ export function AccountMenu({
           </div>
           <div className="py-1">
             <Link ref={firstItemRef} role="menuitem" data-account-menu-item href={profileHref} onClick={() => setOpen(false)} className="block cursor-pointer rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[var(--brand-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]">Profile</Link>
+            {settingsHref ? <Link role="menuitem" data-account-menu-item href={settingsHref} onClick={() => setOpen(false)} className="block cursor-pointer rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[var(--brand-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]">Settings</Link> : null}
           </div>
           <form action={signOutAction} className="border-t border-slate-100 pt-1">
             <button role="menuitem" data-account-menu-item type="submit" className="w-full cursor-pointer rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[var(--brand-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]">Sign out</button>

@@ -25,16 +25,21 @@ export async function submitDataDeletionRequestAction(
   try {
     const customer = await getCustomerForApi();
     if (!customer || customer.role !== "CUSTOMER") return { message: accessError };
-    const { data, error } = await createServiceRoleClient()
+    const client = createServiceRoleClient();
+    const active = await client.from("data_deletion_requests").select("id, status")
+      .eq("user_id", customer.id).in("status", ["PENDING", "PROCESSING"]).limit(1).maybeSingle();
+    if (active.error) return { message: "We could not check your request status. Please try again." };
+    if (active.data) return { message: active.data.status === "PROCESSING" ? "A data deletion request is already processing." : "A data deletion request is already pending." };
+    const { data, error } = await client
       .from("data_deletion_requests")
       .insert({ user_id: customer.id, status: "PENDING", reason: parsed.data.reason || null })
       .select(DATA_DELETION_STATUS_COLUMNS)
       .single();
 
-    // The partial unique index is authoritative, including concurrent submissions.
+    // The active-status unique index backs up the application check during races.
     if (error?.code === "23505") {
-      revalidatePath("/dashboard/profile");
-      return { message: "A data deletion request is already pending." };
+      revalidatePath("/dashboard/settings");
+      return { message: "A data deletion request is already active. Refresh Settings to check its status." };
     }
     if (error || !data) {
       console.error("Data deletion request submission failed:", { category: "database" });
@@ -53,7 +58,9 @@ export async function submitDataDeletionRequestAction(
       console.error("Data deletion confirmation email failed:", { category: "delivery" });
     }
     // Email is best-effort; a recorded request must never be rolled back.
-    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/admin/deletion-requests");
+    revalidatePath("/admin");
     return { outcome: "received", request, emailSent };
   } catch {
     console.error("Data deletion request submission failed:", { category: "unavailable" });
@@ -81,8 +88,10 @@ export async function cancelDataDeletionRequestAction(
       .select(DATA_DELETION_STATUS_COLUMNS)
       .maybeSingle();
 
-    revalidatePath("/dashboard/profile");
-    if (error || !data) return { message: "This request could not be cancelled. Refresh your profile to check its status." };
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/admin/deletion-requests");
+    revalidatePath("/admin");
+    if (error || !data) return { message: "This request could not be cancelled. Refresh Settings to check its status." };
     return { outcome: "cancelled", request: toDataDeletionRequest(data) };
   } catch {
     console.error("Data deletion request cancellation failed:", { category: "unavailable" });

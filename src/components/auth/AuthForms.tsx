@@ -37,10 +37,11 @@ function SubmitButton({
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: "settings" } = {}) {
   const [state, action, pending] = useActionState(loginAction, initialState);
   return (
     <form action={action} className="space-y-5" noValidate>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <Field label="Email" htmlFor="email" error={state.fields?.email?.[0]}>
         <TextInput id="email" name="email" type="email" autoComplete="email" required />
       </Field>

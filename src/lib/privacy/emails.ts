@@ -9,14 +9,16 @@ function escapeHtml(value: string) {
 export function buildDataDeletionRequestEmail(input: RequestEmailInput) {
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (!configuredSiteUrl && process.env.NODE_ENV === "production") throw new Error("Site URL required");
-  const profileUrl = new URL("/dashboard/profile", configuredSiteUrl || "http://localhost:3000").toString();
+  // Enter through the sign-in gate so the dashboard layout cannot lose the
+  // return destination for signed-out recipients. Signed-in customers skip it.
+  const settingsUrl = new URL("/login?next=settings", configuredSiteUrl || "http://localhost:3000").toString();
   const name = input.customerName?.trim() || "there";
-  const body = "Your data deletion request has been recorded for review and is pending. Your account and existing records remain available while the request is pending.";
+  const body = "Your request has been recorded and is pending review. Requests in this InsureFlow demonstration are typically reviewed within 7–14 days. You can cancel your request while it is still pending. Once processing begins, it can no longer be cancelled. Your account and existing records remain available while the request is pending.";
   const disclaimer = "This feature simulates a privacy request workflow and does not represent a real statutory deletion process. Some records may be retained for security, historical workflow integrity, or system maintenance.";
   return {
     subject: "We received your data deletion request",
-    text: `Hi ${name},\n\n${body}\n\nView your profile: ${profileUrl}\n\n${disclaimer}`,
-    html: `<div style="font-family:Inter,Arial,sans-serif;color:#102f43;line-height:1.6;max-width:620px"><p style="color:#0f8077;font-weight:700">INSUREFLOW</p><h1 style="font-size:26px">Request received</h1><p>Hi ${escapeHtml(name)},</p><p>${body}</p><a href="${escapeHtml(profileUrl)}" style="display:inline-block;background:#0f8077;color:white;padding:12px 18px;border-radius:10px;text-decoration:none">View profile</a><p style="font-size:12px;color:#607684">${disclaimer}</p></div>`,
+    text: `Hi ${name},\n\n${body}\n\nView settings or cancel your pending request after signing in and confirming: ${settingsUrl}\n\n${disclaimer}`,
+    html: `<div style="font-family:Inter,Arial,sans-serif;color:#102f43;line-height:1.6;max-width:620px"><p style="color:#0f8077;font-weight:700">INSUREFLOW</p><h1 style="font-size:26px">Request received</h1><p>Hi ${escapeHtml(name)},</p><p>${body}</p><a href="${escapeHtml(settingsUrl)}" style="display:inline-block;background:#0f8077;color:white;padding:12px 18px;border-radius:10px;text-decoration:none">View settings</a><p><a href="${escapeHtml(settingsUrl)}">Cancel deletion request</a> — sign in and confirm in Settings.</p><p style="font-size:12px;color:#607684">${disclaimer}</p></div>`,
   };
 }
 

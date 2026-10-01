@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/AuthForms";
 import { Card } from "@/components/ui/Forms";
 import { Alert } from "@/components/ui/Forms";
-import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
+import { getAuthenticatedProfile } from "@/lib/auth/session";
+import { signInDestination } from "@/lib/auth/destinations";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +24,11 @@ export const metadata: Metadata = { title: "Sign in | InsureFlow" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const profile = await getAuthenticatedProfile();
-  if (profile) redirect(routeForRole(profile.role));
   const params = await searchParams;
+  if (profile) redirect(signInDestination(profile.role, params.next));
   const confirmationError = params.error
     ? confirmationErrors[params.error]
     : undefined;
@@ -44,7 +45,7 @@ export default async function LoginPage({
           <Alert tone="error">{confirmationError}</Alert>
         </div>
       ) : null}
-      <Card><LoginForm /></Card>
+      <Card><LoginForm next={params.next === "settings" ? "settings" : undefined} /></Card>
     </div>
   );
 }

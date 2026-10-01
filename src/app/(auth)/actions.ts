@@ -9,6 +9,7 @@ import {
   type AuthFormState,
 } from "@/lib/auth/validation";
 import { routeForRole } from "@/lib/auth/session";
+import { signInDestination } from "@/lib/auth/destinations";
 import { authCallbackUrl } from "@/lib/auth/urls";
 import { createServerClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/types/database";
@@ -60,7 +61,7 @@ export async function loginAction(
   }
 
   revalidatePath("/", "layout");
-  redirect(routeForRole(role));
+  redirect(formData.get("next") === "settings" ? signInDestination(role, "settings") : routeForRole(role));
 }
 
 export async function signupAction(

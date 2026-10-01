@@ -5,14 +5,11 @@ import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { ChangeEmailControl } from "@/components/profile/ChangeEmailControl";
 import { ChangeFullNameControl } from "@/components/profile/ChangeFullNameControl";
-import { ChangePasswordControl } from "@/components/profile/ChangePasswordControl";
-import { DataDeletionControl } from "@/components/profile/DataDeletionControl";
 import { Alert, Card } from "@/components/ui/Forms";
 import { ProfileIcon } from "@/components/ui/ProfileIcon";
 import { requireCustomer } from "@/lib/auth/session";
 import { getCustomerAccountSummary } from "@/lib/claims/customer";
 import { formatDate } from "@/lib/format";
-import { getCustomerDataDeletionRequest } from "@/lib/privacy/data-deletion";
 
 function ProfileAvatar() {
   return (
@@ -56,10 +53,7 @@ export default async function CustomerProfilePage({
   searchParams?: Promise<{ emailUpdated?: string; emailChangePending?: string }>;
 } = {}) {
   const profile = await requireCustomer();
-  const [{ summary, error }, deletion] = await Promise.all([
-    getCustomerAccountSummary(profile.id),
-    getCustomerDataDeletionRequest(profile.id),
-  ]);
+  const { summary, error } = await getCustomerAccountSummary(profile.id);
   const displayName = profile.full_name?.trim() || "Customer";
   const parameters = await searchParams;
   const email = profile.email?.trim() || "Not provided";
@@ -101,16 +95,6 @@ export default async function CustomerProfilePage({
               action={profile.email ? <ChangeEmailControl currentEmail={email} /> : undefined}
             />
             <DetailRow label="Phone number" value={profile.phone?.trim() || "Not provided"} />
-            <DetailRow
-              label="Password"
-              value={
-                <>
-                  <span className="tracking-[0.18em]" aria-hidden="true" data-testid="password-mask">••••••••</span>
-                  <span className="sr-only">Password is set</span>
-                </>
-              }
-              action={profile.email ? <ChangePasswordControl currentEmail={email} /> : undefined}
-            />
             <DetailRow label="Member since" value={profile.created_at ? formatDate(profile.created_at) : "Not available"} />
           </dl>
         </Card>
@@ -154,7 +138,6 @@ export default async function CustomerProfilePage({
             <Link href="/disclaimer" className="rounded underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Disclaimer</Link>
           </nav>
           </div>
-          <DataDeletionControl request={deletion.request} unavailable={deletion.unavailable} />
         </Card>
       </section>
     </div>

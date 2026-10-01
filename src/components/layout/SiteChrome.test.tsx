@@ -66,7 +66,14 @@ describe("shared branded chrome", () => {
     getAuthenticatedProfileMock.mockResolvedValue({ role, full_name: "Staff member", email: "staff@example.com" });
     render(await SiteHeader());
     expect(screen.getByRole("link", { name: "InsureFlow home" }).getAttribute("href")).toBe("/");
-    expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/admin/claims");
+    if (role === "ADMIN") {
+      expect(screen.getByRole("link", { name: "Overview" }).getAttribute("href")).toBe("/admin");
+      expect(screen.getByRole("link", { name: "Deletion requests" }).getAttribute("href")).toBe("/admin/deletion-requests");
+      expect(screen.getByRole("link", { name: "Claims Officers" }).getAttribute("href")).toBe("/admin/claims-officers");
+    } else {
+      expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/admin/claims");
+      expect(screen.queryByRole("link", { name: "Deletion requests" })).toBeNull();
+    }
     const trigger = screen.getByRole("button", { name: "Account menu" });
     trigger.focus();
     await user.keyboard("{Enter}");

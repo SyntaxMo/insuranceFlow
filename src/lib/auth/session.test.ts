@@ -82,4 +82,14 @@ describe("synchronizeVerifiedProfileEmail", () => {
     expect(result).toEqual({ profile, changed: false });
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it.each(["CLAIMS_OFFICER", "ADMIN"] as const)("repairs a trusted %s email mirror without changing organization-managed identity or role", async role => {
+    const staff = { ...profile, full_name: "Organization Name", role };
+    mocks.single.mockResolvedValue({ data: { ...staff, email: "new@example.com" }, error: null });
+    const result = await synchronizeVerifiedProfileEmail(staff, { id: "auth-id", email: "new@example.com" });
+    expect(mocks.update).toHaveBeenCalledWith({ email: "new@example.com" });
+    expect(result.profile.role).toBe(role);
+    expect(result.profile.full_name).toBe("Organization Name");
+    expect(result.profile.auth_user_id).toBe("auth-id");
+  });
 });

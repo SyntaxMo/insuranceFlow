@@ -1,4 +1,4 @@
-export type DataDeletionStatus = "PENDING" | "COMPLETED" | "REJECTED" | "CANCELLED";
+export type DataDeletionStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED" | "CANCELLED";
 
 /** Only customer-visible request state; excludes reasons and internal resolution notes. */
 export type DataDeletionRequest = {

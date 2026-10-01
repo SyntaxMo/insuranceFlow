@@ -29,7 +29,7 @@ export default async function StaffProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <BackToDashboardLink href="/admin/claims" label="Back to claims" />
+      <BackToDashboardLink href={profile.role === "ADMIN" ? "/admin" : "/admin/claims"} label={profile.role === "ADMIN" ? "Back to admin" : "Back to claims"} />
       <header className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
         <div aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[var(--brand-navy)] text-white shadow-sm ring-4 ring-teal-50">
           <ProfileIcon className="size-7" />

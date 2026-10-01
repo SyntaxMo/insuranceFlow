@@ -10,7 +10,7 @@ describe("customer deletion request status loader", () => {
     for (const method of [mocks.from, mocks.select, mocks.eq, mocks.order, mocks.limit]) method.mockReturnValue(query);
   });
 
-  it.each(["PENDING", "COMPLETED", "REJECTED", "CANCELLED"])("loads the latest owned %s status without reason or internal notes", async (status) => {
+  it.each(["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "CANCELLED"])("loads the latest owned %s status without reason or internal notes", async (status) => {
     mocks.maybeSingle.mockResolvedValue({ data: { id: "request", status, created_at: "2026-10-01", updated_at: "2026-10-02", resolved_at: null, user_id: "owner", reason: "sensitive reason", resolution_note: "private maintenance note" }, error: null });
     const result = await getCustomerDataDeletionRequest("session-customer");
     expect(result).toEqual({ request: { id: "request", status, createdAt: "2026-10-01", updatedAt: "2026-10-02", resolvedAt: null }, unavailable: false });

@@ -75,7 +75,7 @@ describe("public legal information", () => {
     render(await PrivacyPage());
     expect(screen.getByRole("heading", { name: "Verification and operational records" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Data access and deletion" })).toBeTruthy();
-    expect(screen.getByText(/Customers can submit a data deletion request through their account/)).toBeTruthy();
+    expect(screen.getByText(/Customers can submit a data deletion request through their account settings/)).toBeTruthy();
     expect(screen.getByText(/Requests are reviewed rather than processed automatically/)).toBeTruthy();
     expect(screen.getByText(/does not provide complete self-service data export or immediate account deletion/)).toBeTruthy();
     expect(screen.getByText(/Depending on the model selected through OpenRouter/)).toBeTruthy();

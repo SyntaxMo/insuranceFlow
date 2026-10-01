@@ -31,6 +31,7 @@ describe("CustomerAccountMenu", () => {
     expect(screen.getByText("Mohammed Essam")).toBeTruthy();
     expect(screen.getByText("mohammed@example.com")).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Profile" }).getAttribute("href")).toBe("/dashboard/profile");
+    expect(screen.getByRole("menuitem", { name: "Settings" }).getAttribute("href")).toBe("/dashboard/settings");
     expect(screen.queryByRole("menuitem", { name: "Dashboard" })).toBeNull();
     const signOut = screen.getByRole("menuitem", { name: "Sign out" });
     expect(signOut.getAttribute("type")).toBe("submit");
@@ -64,6 +65,8 @@ describe("CustomerAccountMenu", () => {
     const profile = screen.getByRole("menuitem", { name: "Profile" });
     expect(document.activeElement).toBe(profile);
 
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Settings" }));
     await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Sign out" }));
     await user.keyboard("{Escape}");

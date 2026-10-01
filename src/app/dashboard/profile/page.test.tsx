@@ -78,14 +78,14 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByText("Not provided")).toBeTruthy();
   });
 
-  it("shows the authenticated customer's pending deletion request instead of a new request action", async () => {
+  it("does not duplicate Settings security and deletion controls", async () => {
     mocks.getCustomerDataDeletionRequest.mockResolvedValue({ request: { id: "request-id", status: "PENDING", createdAt: "2026-10-01", updatedAt: "2026-10-01", resolvedAt: null }, unavailable: false });
     render(await CustomerProfilePage());
-    expect(mocks.getCustomerDataDeletionRequest).toHaveBeenCalledWith(customer.id);
-    expect(screen.getByText("Pending")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Cancel request" })).toBeTruthy();
+    expect(mocks.getCustomerDataDeletionRequest).not.toHaveBeenCalled();
+    expect(screen.queryByText("Pending")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cancel request" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Request data deletion" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Change password" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Change password" })).toBeNull();
   });
 
   it("consolidates profile information into one Account details card", async () => {
@@ -98,14 +98,10 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByText("Full name")).toBeTruthy();
     expect(screen.getByText("Email")).toBeTruthy();
     expect(screen.getByText("Phone number")).toBeTruthy();
-    expect(screen.getByText("Password")).toBeTruthy();
+    expect(screen.queryByText("Password")).toBeNull();
     expect(screen.getByText("Member since")).toBeTruthy();
-    const mask = screen.getByTestId("password-mask");
-    expect(mask.textContent).toBe("••••••••");
-    expect(mask.getAttribute("aria-hidden")).toBe("true");
-    expect(screen.getByText("Password is set")).toBeTruthy();
-    const passwordButton = screen.getByRole("button", { name: "Change password" });
-    expect(passwordButton.querySelector('[data-testid="pencil-icon"]')).toBeTruthy();
+    expect(screen.queryByTestId("password-mask")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Change password" })).toBeNull();
     expect(screen.queryByText(/password hash|credential|actual password/i)).toBeNull();
   });
 
@@ -142,8 +138,8 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByRole("link", { name: "Disclaimer" }).getAttribute("href")).toBe("/disclaimer");
     expect(screen.getByRole("button", { name: "Change email" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Change full name" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Change password" })).toBeTruthy();
-    for (const name of ["Change full name", "Change email", "Change password"]) {
+    expect(screen.queryByRole("button", { name: "Change password" })).toBeNull();
+    for (const name of ["Change full name", "Change email"]) {
       expect(screen.getByRole("button", { name }).querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     }
     expect(screen.getByText("Member since").parentElement?.querySelector("button")).toBeNull();

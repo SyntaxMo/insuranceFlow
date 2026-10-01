@@ -6,5 +6,5 @@ export function CustomerAccountMenu({ customerName, customerEmail }: {
   customerName: string | null;
   customerEmail: string | null;
 }) {
-  return <AccountMenu accountName={customerName} accountEmail={customerEmail} profileHref="/dashboard/profile" fallbackName="Customer" />;
+  return <AccountMenu accountName={customerName} accountEmail={customerEmail} profileHref="/dashboard/profile" settingsHref="/dashboard/settings" fallbackName="Customer" />;
 }

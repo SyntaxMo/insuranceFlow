@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   customer: vi.fn(), client: vi.fn(), from: vi.fn(), insert: vi.fn(), update: vi.fn(),
   select: vi.fn(), eq: vi.fn(), single: vi.fn(), maybeSingle: vi.fn(),
   sendEmail: vi.fn(), revalidate: vi.fn(), remove: vi.fn(), deleteUser: vi.fn(),
+  in: vi.fn(), active: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/session", () => ({ getCustomerForApi: mocks.customer }));
@@ -30,7 +31,9 @@ describe("data deletion request actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.customer.mockResolvedValue({ id: "authenticated-customer", role: "CUSTOMER", full_name: "Customer Name", email: "verified@example.com" });
-    const query = { insert: mocks.insert, update: mocks.update, select: mocks.select, eq: mocks.eq, single: mocks.single, maybeSingle: mocks.maybeSingle, delete: mocks.remove };
+    const query = { insert: mocks.insert, update: mocks.update, select: mocks.select, eq: mocks.eq, single: mocks.single, maybeSingle: mocks.maybeSingle, delete: mocks.remove, in: mocks.in };
+    mocks.in.mockReturnValue({ limit: () => ({ maybeSingle: mocks.active }) });
+    mocks.active.mockResolvedValue({ data: null, error: null });
     mocks.client.mockReturnValue({ from: mocks.from, auth: { admin: { deleteUser: mocks.deleteUser } } });
     for (const method of [mocks.from, mocks.insert, mocks.update, mocks.select, mocks.eq]) method.mockReturnValue(query);
     mocks.single.mockResolvedValue({ data: row, error: null });
@@ -44,10 +47,10 @@ describe("data deletion request actions", () => {
     expect(result.request?.status).toBe("PENDING");
     expect(mocks.insert).toHaveBeenCalledWith({ user_id: "authenticated-customer", status: "PENDING", reason: "Please review my demo data." });
     expect(mocks.from).toHaveBeenCalledWith("data_deletion_requests");
-    expect(mocks.from).toHaveBeenCalledTimes(1);
+    expect(mocks.from).toHaveBeenCalledTimes(2);
     expect(mocks.remove).not.toHaveBeenCalled(); expect(mocks.deleteUser).not.toHaveBeenCalled();
     expect(mocks.sendEmail).toHaveBeenCalledWith({ recipient: "verified@example.com", customerName: "Customer Name", requestId: id });
-    expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard/profile");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard/settings");
     expect(JSON.stringify(result)).not.toMatch(/user_id|verified@example|reason|resolution_note/);
   });
 
@@ -77,12 +80,12 @@ describe("data deletion request actions", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
-  it("handles the unique pending constraint without resending email", async () => {
+  it("handles the unique active constraint race without resending email", async () => {
     mocks.single.mockResolvedValue({ data: null, error: { code: "23505", message: "internal constraint detail" } });
     const result = await submitDataDeletionRequestAction({}, form());
-    expect(result.message).toBe("A data deletion request is already pending.");
+    expect(result.message).toBe("A data deletion request is already active. Refresh Settings to check its status.");
     expect(mocks.sendEmail).not.toHaveBeenCalled();
-    expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard/profile");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard/settings");
   });
 
   it.each([false, "throws"])("keeps the request successful when email delivery %s", async (failure) => {
@@ -95,6 +98,21 @@ describe("data deletion request actions", () => {
     expect(JSON.stringify(result)).not.toContain("private provider");
   });
 
+  it.each(["PENDING", "PROCESSING"])("blocks a new request when %s exists before insert", async (status) => {
+    mocks.active.mockResolvedValue({ data: { id, status }, error: null });
+    const result = await submitDataDeletionRequestAction({}, form());
+    expect(result.message).toMatch(/already.*pending|already.*processing/i);
+    expect(mocks.in).toHaveBeenCalledWith("status", ["PENDING", "PROCESSING"]);
+    expect(mocks.eq).toHaveBeenCalledWith("user_id", "authenticated-customer");
+    expect(mocks.insert).not.toHaveBeenCalled(); expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the active-request lookup fails", async () => {
+    mocks.active.mockResolvedValue({ data: null, error: { message: "private" } });
+    expect((await submitDataDeletionRequestAction({}, form())).outcome).toBeUndefined();
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
   it("cancels only the customer's explicitly selected pending request", async () => {
     const result = await cancelDataDeletionRequestAction({}, cancellation());
     expect(result.outcome).toBe("cancelled"); expect(result.request?.status).toBe("CANCELLED");
@@ -104,7 +122,7 @@ describe("data deletion request actions", () => {
     expect(mocks.remove).not.toHaveBeenCalled(); expect(mocks.sendEmail).not.toHaveBeenCalled();
   });
 
-  it.each(["another customer's", "completed", "rejected", "already cancelled"])("cannot cancel a %s request", async () => {
+  it.each(["another customer's", "processing", "completed", "rejected", "already cancelled"])("cannot cancel a %s request", async () => {
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
     expect((await cancelDataDeletionRequestAction({}, cancellation())).outcome).toBeUndefined();
     expect(mocks.eq).toHaveBeenCalledWith("user_id", "authenticated-customer");
