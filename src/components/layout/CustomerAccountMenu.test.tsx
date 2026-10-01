@@ -19,6 +19,7 @@ describe("CustomerAccountMenu", () => {
     expect(trigger.tagName).toBe("BUTTON");
     expect(trigger.textContent).toBe("");
     expect(trigger.querySelector('[data-testid="default-profile-icon"]')).toBeTruthy();
+    expect(trigger.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     expect(trigger.className).toContain("cursor-pointer");
     expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");

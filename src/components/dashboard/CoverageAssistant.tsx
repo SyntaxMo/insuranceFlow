@@ -178,7 +178,7 @@ export function CoverageAssistant({
       <aside className="mt-5 flex flex-col gap-4 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/80 to-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="AI coverage guidance">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-[var(--brand-teal)] ring-1 ring-teal-200" aria-hidden="true">
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3 1.15 3.35L16.5 7.5l-3.35 1.15L12 12l-1.15-3.35L7.5 7.5l3.35-1.15L12 3Z"/><path d="m18.5 13 .75 2.25L21.5 16l-2.25.75L18.5 19l-.75-2.25L15.5 16l2.25-.75L18.5 13Z"/><path d="m5.5 13 .75 2.25L8.5 16l-2.25.75L5.5 19l-.75-2.25L2.5 16l2.25-.75L5.5 13Z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3 1.15 3.35L16.5 7.5l-3.35 1.15L12 12l-1.15-3.35L7.5 7.5l3.35-1.15L12 3Z"/><path d="m18.5 13 .75 2.25L21.5 16l-2.25.75L18.5 19l-.75-2.25L15.5 16l2.25-.75L18.5 13Z"/><path d="m5.5 13 .75 2.25L8.5 16l-2.25.75L5.5 19l-.75-2.25L2.5 16l2.25-.75L5.5 13Z"/></svg>
           </span>
           <div>
             <h3 className="font-semibold text-[var(--brand-navy)]">Not sure which coverage fits you?</h3>

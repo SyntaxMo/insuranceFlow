@@ -231,7 +231,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
               <span className="relative mt-0.5 block size-5 shrink-0">
                 <input id="purchase-consent" type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="peer absolute inset-0 z-10 size-5 cursor-pointer opacity-0" />
                 <span data-testid="purchase-consent-control" aria-hidden="true" className={`pointer-events-none flex size-5 items-center justify-center rounded-md border transition peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--brand-teal)] peer-focus-visible:ring-offset-2 ${consentAccepted ? "border-[var(--brand-teal)] bg-[var(--brand-teal)] text-white" : "border-slate-400 bg-white text-transparent"}`}>
-                  <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>
                 </span>
               </span>
               <div className="min-w-0">

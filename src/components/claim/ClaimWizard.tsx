@@ -584,6 +584,7 @@ export function ClaimWizard({
                   type="button"
                   variant="danger"
                   className="px-2 py-1 text-xs"
+                  aria-label={`Remove ${files.policeReport.name}`}
                   onClick={() =>
                     setFiles((prev) => ({ ...prev, policeReport: null }))
                   }
@@ -612,6 +613,7 @@ export function ClaimWizard({
                   type="button"
                   variant="danger"
                   className="px-2 py-1 text-xs"
+                  aria-label={`Remove ${files.repairEstimate.name}`}
                   onClick={() =>
                     setFiles((prev) => ({ ...prev, repairEstimate: null }))
                   }
@@ -648,7 +650,7 @@ export function ClaimWizard({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={photoPreviews[index].url!}
-                        alt={file.name}
+                        alt={`Selected accident image ${index + 1}`}
                         className="mb-2 h-28 w-full rounded-lg object-cover"
                       />
                     ) : null}
@@ -660,6 +662,7 @@ export function ClaimWizard({
                         type="button"
                         variant="danger"
                         className="px-2 py-1 text-xs"
+                        aria-label={`Remove ${file.name}`}
                         onClick={() => removePhoto(index)}
                       >
                         Remove

@@ -23,6 +23,8 @@ describe("shared branded chrome", () => {
     render(await SiteHeader());
     expect(screen.getByRole("link", { name: "InsureFlow home" }).getAttribute("href")).toBe("/");
     expect(screen.getByTestId("insureflow-logo").getAttribute("src")).toContain("insureflow-mark.webp");
+    expect(screen.getByTestId("insureflow-logo").getAttribute("alt")).toBe("");
+    expect(screen.queryByRole("img")).toBeNull();
     expect(screen.getByRole("link", { name: "Insurance" }).getAttribute("href")).toBe("/#coverage");
     expect(screen.getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("/#how-it-works");
     expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/#claims");

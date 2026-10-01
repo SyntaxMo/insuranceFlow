@@ -10,7 +10,7 @@ describe("combined hero and coverage story", () => {
 
   it("renders one car for both hero and coverage", () => {
     render(<HeroCoverageStory />);
-    expect(screen.getAllByAltText(/Modern dark blue crossover/)).toHaveLength(1);
+    expect(screen.getAllByRole("img", { name: "Vehicle illustrating motor coverage examples" })).toHaveLength(1);
     expect(screen.getByRole("heading", { name: "Drive with confidence." })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "See how coverage can differ." })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Compare both" }).getAttribute("aria-pressed")).toBe("true");
@@ -76,7 +76,7 @@ describe("combined hero and coverage story", () => {
     const user = userEvent.setup();
     render(<HeroCoverageStory />);
     await user.click(screen.getByRole("button", { name: "Other people & property" }));
-    expect(screen.getAllByAltText(/Modern dark blue crossover/)).toHaveLength(1);
+    expect(screen.getAllByRole("img", { name: "Vehicle illustrating motor coverage examples" })).toHaveLength(1);
     expect(screen.getByText(/Both options include third-party liability here/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Windshield/ })).toBeNull();
   });

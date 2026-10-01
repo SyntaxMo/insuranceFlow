@@ -143,6 +143,14 @@ describe("ClaimWizard saved policy selection", () => {
     const photo = new File(["photo"], "accident.jpg", { type: "image/jpeg" });
     await user.upload(screen.getByLabelText("Repair estimate (required)"), repair);
     await user.upload(screen.getByLabelText("Accident photos (required, multiple allowed)"), photo);
+    expect(screen.getByRole("img", { name: "Selected accident image 1" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "accident.jpg" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Remove repair.pdf" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove accident.jpg" })).toBeTruthy();
+    const police = new File(["report"], "police.pdf", { type: "application/pdf" });
+    await user.upload(screen.getByLabelText("Police report (optional)"), police);
+    await user.click(screen.getByRole("button", { name: "Remove police.pdf" }));
+    expect(screen.queryByRole("button", { name: "Remove police.pdf" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Continue to review" }));
     await user.click(screen.getByRole("button", { name: "Submit Claim" }));
 

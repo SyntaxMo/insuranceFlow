@@ -45,6 +45,7 @@ describe("CoverageAssistant", () => {
     const user = userEvent.setup();
     render(<CoverageAssistant vehicle={{ make: "Toyota", model: "Corolla", year: 2026, estimatedValue: 9500 }} selectedCoverage="THIRD_PARTY" onAccept={vi.fn()} />);
     const trigger = screen.getByRole("button", { name: "Help me choose" });
+    expect(screen.getByRole("complementary", { name: "AI coverage guidance" }).querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     await user.click(trigger);
     expect(screen.getByRole("dialog", { name: "Help me choose" })).toBeTruthy();
     await user.click(screen.getByLabelText("Very important"));

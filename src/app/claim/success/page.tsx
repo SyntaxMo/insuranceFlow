@@ -16,7 +16,7 @@ export default async function ClaimSuccessPage({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col px-4 py-14 sm:px-6">
       <Card className="space-y-5 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+        <div aria-hidden="true" className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
           ✓
         </div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">

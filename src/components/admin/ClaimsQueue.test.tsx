@@ -62,8 +62,8 @@ describe("ClaimsQueue", () => {
       expect.stringContaining("CLM-WAIT"),
       expect.stringContaining("CLM-RESPONSE"),
     ]);
-    expect(within(rows[0]).getByRole("link", { name: "Review" }).getAttribute("href")).toBe("/admin/claims/1");
-    expect(within(rows[1]).getByRole("link", { name: "View" }).getAttribute("href")).toBe("/admin/claims/2");
+    expect(within(rows[0]).getByRole("link", { name: "Review claim CLM-NEW" }).getAttribute("href")).toBe("/admin/claims/1");
+    expect(within(rows[1]).getByRole("link", { name: "View claim CLM-WAIT" }).getAttribute("href")).toBe("/admin/claims/2");
   });
 
   it("keeps every lifecycle status badge on one line", () => {

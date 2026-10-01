@@ -53,7 +53,31 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
 
           <Card className="space-y-4"><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Policy</h2><dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Detail label="Policy number" value={claim.policy.policyNumber} /><Detail label="Coverage" value={formatCoverageType(claim.policy.coverageType)} /><Detail label="Policy status" value={claim.policyStatus} /><Detail label="Start date" value={formatDate(claim.policy.startDate)} /><Detail label="End date" value={formatDate(claim.policy.endDate)} /><Detail label="Excess" value={formatCurrency(claim.policy.excessAmount)} /><Detail label="Coverage limit" value={formatCurrency(claim.policy.coverageLimit)} /><Detail label="Annual premium" value={claim.annualPremium == null ? "Not available" : formatCurrency(claim.annualPremium)} /></dl></Card>
 
-          <Card className="space-y-4"><div><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Submitted evidence</h2><p className="mt-1 text-sm text-slate-600">Private documents are opened through a short-lived authorized link.</p></div>{claim.documents.length === 0 ? <p className="text-sm text-slate-600">No documents found.</p> : <div className="grid gap-3 sm:grid-cols-2">{claim.documents.map((document) => { const route = `/api/admin/claims/${claim.id}/documents/${document.id}`; const isImage = document.mimeType?.startsWith("image/"); return <article key={document.id} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">{isImage ? <div className="relative aspect-[16/10] bg-slate-100"><Image src={route} alt={`${documentTypeLabel(document.documentType)} evidence`} fill unoptimized className="object-cover" sizes="(max-width: 640px) 100vw, 420px" /></div> : null}<div className="p-3"><p className="text-sm font-semibold text-slate-900">{documentTypeLabel(document.documentType)}</p><p className="mt-1 break-all text-xs text-slate-500">{document.fileName}</p><div className="mt-3 flex gap-2"><a href={route} target="_blank" rel="noreferrer" className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>Open securely</a><a href={`${route}?download=1`} className="self-center text-sm font-semibold text-[var(--brand-teal)] hover:underline">Download</a></div></div></article>; })}</div>}</Card>
+          <Card className="space-y-4">
+            <div><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Submitted evidence</h2><p className="mt-1 text-sm text-slate-600">Private documents are opened through a short-lived authorized link.</p></div>
+            {claim.documents.length === 0 ? <p className="text-sm text-slate-600">No documents found.</p> : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {claim.documents.map((document, index) => {
+                  const route = `/api/admin/claims/${claim.id}/documents/${document.id}`;
+                  const isImage = document.mimeType?.startsWith("image/");
+                  const typeLabel = documentTypeLabel(document.documentType);
+                  return (
+                    <article key={document.id} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+                      {isImage ? <div className="relative aspect-[16/10] bg-slate-100"><Image src={route} alt={`${typeLabel} evidence, attachment ${index + 1}`} fill unoptimized className="object-cover" sizes="(max-width: 640px) 100vw, 420px" /></div> : null}
+                      <div className="p-3">
+                        <p className="text-sm font-semibold text-slate-900">{typeLabel}</p>
+                        <p className="mt-1 break-all text-xs text-slate-500">{document.fileName}</p>
+                        <div className="mt-3 flex gap-2">
+                          <a href={route} target="_blank" rel="noreferrer" aria-label={`Open securely: ${typeLabel}: ${document.fileName}`} className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>Open securely</a>
+                          <a href={`${route}?download=1`} aria-label={`Download ${typeLabel}: ${document.fileName}`} className="self-center text-sm font-semibold text-[var(--brand-teal)] hover:underline">Download</a>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
 
           <AiClaimAnalysis claimId={claim.id} initialAnalysis={savedAnalysis.analysis} />
         </div>

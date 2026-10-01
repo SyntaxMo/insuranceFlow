@@ -40,6 +40,8 @@ describe("vehicle autocomplete", () => {
     render(<VehicleBrandMark />);
     const fallback = screen.getByTestId("vehicle-brand-fallback");
     expect(fallback.getAttribute("src")).toContain("/vehicle-brands/generic-vehicle.svg");
+    expect(fallback.getAttribute("alt")).toBe("");
+    expect(screen.queryByRole("img")).toBeNull();
     expect(screen.queryByText(/^[A-Z]{2}$/)).toBeNull();
   });
 

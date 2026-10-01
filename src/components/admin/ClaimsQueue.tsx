@@ -119,7 +119,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                       <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(claim.status)}`}>{officerClaimStatusLabel(claim.status)}</span>
                     </td>
                     <td className="px-4 py-4"><ClaimActivity claim={claim} /></td>
-                    <td className="px-4 py-4"><Link href={`/admin/claims/${claim.id}`} className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>{claim.status.toUpperCase() === "SUBMITTED" ? "Review" : "View"}</Link></td>
+                    <td className="px-4 py-4"><Link href={`/admin/claims/${claim.id}`} aria-label={`${claim.status.toUpperCase() === "SUBMITTED" ? "Review" : "View"} claim ${claim.claimNumber}`} className={buttonClassName("secondary", "min-h-9 px-3 py-2")}>{claim.status.toUpperCase() === "SUBMITTED" ? "Review" : "View"}</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -138,7 +138,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
                   <p className="mb-1.5 text-xs font-medium text-slate-500">Activity</p>
                   <ClaimActivity claim={claim} />
                 </div>
-                <Link href={`/admin/claims/${claim.id}`} className={buttonClassName("secondary", "w-full sm:w-auto")}>View claim</Link>
+                <Link href={`/admin/claims/${claim.id}`} aria-label={`View claim ${claim.claimNumber}`} className={buttonClassName("secondary", "w-full sm:w-auto")}>View claim</Link>
               </Card>
             ))}
           </div>

@@ -164,7 +164,7 @@ export function HeroCoverageStory() {
             <div className="absolute inset-x-[16%] bottom-[22%] h-8 rounded-full bg-slate-900/10 blur-2xl" />
             <div className={`${styles.car} relative z-10 w-full max-w-[45rem]`}>
               <div className="relative aspect-[3/2]">
-                <Image src="/brand/hero-car.webp" alt="Modern dark blue crossover illustrating digital motor insurance coverage" fill loading="eager" sizes="(max-width: 1023px) 94vw, 54vw" className="object-contain drop-shadow-[0_26px_25px_rgba(15,23,42,0.2)]" />
+                <Image src="/brand/hero-car.webp" alt="Vehicle illustrating motor coverage examples" fill loading="eager" sizes="(max-width: 1023px) 94vw, 54vw" className="object-contain drop-shadow-[0_26px_25px_rgba(15,23,42,0.2)]" />
                 {protectionView === "vehicle" ? hotspots.map((hotspot) => {
                   const selected = activeId === hotspot.id;
                   const tooltipId = `coverage-tooltip-${hotspot.id}`;

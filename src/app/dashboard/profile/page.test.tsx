@@ -46,6 +46,7 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByRole("heading", { name: "Your profile" })).toBeTruthy();
     const avatar = screen.getByTestId("profile-page-avatar");
     expect(avatar.querySelector('[data-testid="default-profile-icon"]')).toBeTruthy();
+    expect(avatar.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     expect(avatar.textContent).toBe("");
     const fullName = screen.getByText("Mohammed Essam");
     expect(fullName.parentElement?.className).toContain("sm:flex");
@@ -127,6 +128,9 @@ describe("CustomerProfilePage", () => {
     expect(screen.getByRole("button", { name: "Change email" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Change full name" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Change password" })).toBeTruthy();
+    for (const name of ["Change full name", "Change email", "Change password"]) {
+      expect(screen.getByRole("button", { name }).querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    }
     expect(screen.getByText("Member since").parentElement?.querySelector("button")).toBeNull();
     expect(screen.getByRole("button", { name: "Change email" }).textContent).toBe("");
     expect(screen.getByRole("button", { name: "Change email" }).querySelector('[data-testid="pencil-icon"]')).toBeTruthy();
