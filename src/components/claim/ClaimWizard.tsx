@@ -53,6 +53,7 @@ function StepIndicator({ current }: { current: Step }) {
         return (
           <li
             key={step.id}
+            aria-current={active ? "step" : undefined}
             className={`rounded-xl border px-3 py-2 text-sm ${
               active
                 ? "border-[var(--brand-teal)] bg-[var(--brand-teal-soft)] text-[var(--brand-navy)]"
@@ -65,6 +66,7 @@ function StepIndicator({ current }: { current: Step }) {
               Step {step.id}
             </span>
             <span className="font-semibold">{step.label}</span>
+            {complete ? <span className="sr-only"> completed</span> : null}
           </li>
         );
       })}
@@ -207,16 +209,21 @@ export function ClaimWizard({
   initialPhone,
   policies,
   policyLoadError,
+  initialPolicyId,
 }: {
   initialEmail: string;
   initialPhone: string;
   policies: ClaimPolicyOption[];
   policyLoadError: string | null;
+  initialPolicyId?: string;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
+  const initialPolicy = !policyLoadError
+    ? policies.find((item) => item.policyId === initialPolicyId)
+    : undefined;
+  const [step, setStep] = useState<Step>(initialPolicy ? 2 : 1);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(
-    policies.length === 1 ? policies[0].policyId : null,
+    initialPolicy?.policyId ?? null,
   );
   const [policyError, setPolicyError] = useState<string | null>(null);
   const policy = policies.find((item) => item.policyId === selectedPolicyId) ?? null;

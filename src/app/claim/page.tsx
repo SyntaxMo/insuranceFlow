@@ -5,12 +5,26 @@ import { getEligibleCustomerClaimPolicies } from "@/lib/claims/customer";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClaimPage() {
+export default async function ClaimPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ policy?: string | string[]; from?: string | string[] }>;
+} = {}) {
   const profile = await requireCustomer();
   const { policies, error } = await getEligibleCustomerClaimPolicies(profile.id);
+  const query = await searchParams;
+  // Only the authenticated customer's eligible policy list can authorize entry.
+  // Unknown IDs and repeated query parameters fall back to generic intake.
+  const initialPolicy = !error && typeof query?.policy === "string"
+    ? policies.find((policy) => policy.policyId === query.policy)
+    : undefined;
+  const returnToPolicy = initialPolicy && query?.from === "policy";
+  const backHref = returnToPolicy
+    ? `/dashboard/policies/${initialPolicy.policyId}`
+    : "/dashboard";
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-      <BackToDashboardLink />
+      <BackToDashboardLink href={backHref} label={returnToPolicy ? "Back to policy" : "Back to dashboard"} />
       <div className="mb-8 mt-5">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">
           Claim intake
@@ -24,6 +38,8 @@ export default async function ClaimPage() {
         </p>
       </div>
       <ClaimWizard
+        key={`${initialPolicy?.policyId ?? "generic"}:${backHref}`}
+        initialPolicyId={initialPolicy?.policyId}
         initialEmail={profile.email || ""}
         initialPhone={profile.phone || ""}
         policies={policies}

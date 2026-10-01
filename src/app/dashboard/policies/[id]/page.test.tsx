@@ -49,6 +49,7 @@ describe("customer policy document action", () => {
     expect(screen.queryByText("← Back to dashboard")).toBeNull();
     const download = screen.getByRole("link", { name: "Download policy MOT-2026-D95F565D" });
     expect(download.getAttribute("href")).toBe(`/dashboard/policies/${policyId}/document`);
+    expect(screen.getByRole("link", { name: "Make a claim" }).getAttribute("href")).toBe(`/claim?policy=${policyId}&from=policy`);
   });
 
   it("keeps a linked policy without a generated document functional and hides the action", async () => {
@@ -59,5 +60,6 @@ describe("customer policy document action", () => {
     expect(screen.getByRole("heading", { name: "Toyota Corolla (2026)" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Download policy/ })).toBeNull();
     expect(screen.getByText("Policy management")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Make a claim" }).getAttribute("href")).toBe(`/claim?policy=${policyId}&from=policy`);
   });
 });

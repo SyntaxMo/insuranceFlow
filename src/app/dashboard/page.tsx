@@ -149,7 +149,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
                   </dl>
                   <div className="mt-auto flex flex-col-reverse gap-2.5 pt-5 sm:flex-row sm:justify-end">
                     <Link href={`/dashboard/policies/${policy.id}`} className={buttonClassName("secondary", "w-full sm:w-auto")}>View policy</Link>
-                    <Link href="/claim" className={buttonClassName("primary", "w-full sm:w-auto")}>Make a claim</Link>
+                    <Link href={`/claim?policy=${encodeURIComponent(policy.id)}`} className={buttonClassName("primary", "w-full sm:w-auto")}>Make a claim</Link>
                   </div>
                 </Card>
               );

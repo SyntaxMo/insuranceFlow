@@ -33,4 +33,25 @@ describe("CustomerDashboardPage navigation", () => {
     expect(screen.queryByRole("link", { name: "Back to dashboard" })).toBeNull();
     expect(screen.getAllByRole("link", { name: "Create a new claim" })[0]?.getAttribute("href")).toBe("/claim");
   });
+
+  it("starts each direct or linked policy card claim with that policy, without changing generic entry", async () => {
+    mocks.getCustomerDashboard.mockResolvedValue({
+      policies: ["DIRECT", "LINKED"].map((accessType, index) => ({
+        id: `11111111-1111-4111-8111-11111111111${index}`,
+        policy_number: `MOT-2026-${index}`,
+        status: "ACTIVE", coverage_type: "COMPREHENSIVE", accessType,
+        start_date: "2026-01-01", end_date: "2027-01-01",
+        excess_amount: 150, coverage_limit: 9500, vehicles: null,
+      })),
+      claims: [], error: null,
+    });
+    render(await CustomerDashboardPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getAllByRole("link", { name: "Make a claim" }).map((link) => link.getAttribute("href"))).toEqual([
+      "/claim?policy=11111111-1111-4111-8111-111111111110",
+      "/claim?policy=11111111-1111-4111-8111-111111111111",
+    ]);
+    for (const link of screen.getAllByRole("link", { name: "Create a new claim" })) {
+      expect(link.getAttribute("href")).toBe("/claim");
+    }
+  });
 });

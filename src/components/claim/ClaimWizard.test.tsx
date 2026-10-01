@@ -50,13 +50,14 @@ const linkedPolicy = policy(
   "LINKED",
 );
 
-function renderWizard(policies: ClaimPolicyOption[]) {
+function renderWizard(policies: ClaimPolicyOption[], initialPolicyId?: string) {
   return render(
     <ClaimWizard
       initialEmail="customer@example.com"
       initialPhone="+973 3900 0000"
       policies={policies}
       policyLoadError={null}
+      initialPolicyId={initialPolicyId}
     />,
   );
 }
@@ -108,11 +109,33 @@ describe("ClaimWizard saved policy selection", () => {
     expect((screen.getByRole("radio", { name: /MOT-2026-LINKED/ }) as HTMLInputElement).checked).toBe(true);
   });
 
-  it("preselects a single eligible policy while still showing its context", () => {
+  it("requires an explicit choice even for one policy on generic entry", () => {
     renderWizard([directPolicy]);
-    expect((screen.getByRole("radio", { name: /MOT-2026-DIRECT/ }) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole("radio", { name: /MOT-2026-DIRECT/ }) as HTMLInputElement).checked).toBe(false);
     expect(screen.getByText("Toyota Corolla (2026)")).toBeTruthy();
     expect(screen.getByText("927410")).toBeTruthy();
+  });
+
+  it.each([directPolicy, linkedPolicy])("starts at Accident for preselected $accessType policy and permits changing policy", async (selected) => {
+    const user = userEvent.setup();
+    renderWizard([directPolicy, linkedPolicy], selected.policyId);
+    expect(screen.getByRole("heading", { name: "Accident details" })).toBeTruthy();
+    expect(screen.getByText(selected.policyNumber)).toBeTruthy();
+    expect(screen.getByText("Claiming under")).toBeTruthy();
+    expect(screen.getByText("Policy").closest("li")?.textContent).toContain("completed");
+    expect(screen.getByText("Accident").closest("li")?.getAttribute("aria-current")).toBe("step");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect((screen.getByRole("radio", { name: new RegExp(selected.policyNumber) }) as HTMLInputElement).checked).toBe(true);
+    const other = selected === directPolicy ? linkedPolicy : directPolicy;
+    await user.click(screen.getByRole("radio", { name: new RegExp(other.policyNumber) }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText(other.policyNumber)).toBeTruthy();
+  });
+
+  it("ignores preselection outside the supplied eligible policies", () => {
+    renderWizard([directPolicy], "33333333-3333-4333-8333-333333333333");
+    expect(screen.getByRole("heading", { name: "Choose a policy" })).toBeTruthy();
+    expect((screen.getByRole("radio") as HTMLInputElement).checked).toBe(false);
   });
 
   it("shows a useful empty state instead of a dead-end form", () => {
@@ -124,15 +147,19 @@ describe("ClaimWizard saved policy selection", () => {
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
   });
 
-  it("submits the selected persisted policy ID through the existing claim request", async () => {
+  it.each(["generic", "preselected", "linked"])("submits the selected persisted policy ID through the existing claim request on %s entry", async (entry) => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ ok: true, claimNumber: "CLM-2026-ABC123" }),
     });
     vi.stubGlobal("fetch", fetchMock);
-    renderWizard([directPolicy]);
+    const selected = entry === "linked" ? linkedPolicy : directPolicy;
+    renderWizard([directPolicy, linkedPolicy], entry !== "generic" ? selected.policyId : undefined);
 
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    if (entry === "generic") {
+      await user.click(screen.getByRole("radio", { name: /MOT-2026-DIRECT/ }));
+      await user.click(screen.getByRole("button", { name: "Continue" }));
+    }
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     fireEvent.change(screen.getByLabelText("Accident date"), { target: { value: yesterday } });
     await user.type(screen.getByLabelText("Accident location"), "Manama Highway");
@@ -152,12 +179,13 @@ describe("ClaimWizard saved policy selection", () => {
     await user.click(screen.getByRole("button", { name: "Remove police.pdf" }));
     expect(screen.queryByRole("button", { name: "Remove police.pdf" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Continue to review" }));
+    expect(screen.getByText(selected.policyNumber)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Submit Claim" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const body = request.body as FormData;
-    expect(body.get("policyId")).toBe(directPolicy.policyId);
+    expect(body.get("policyId")).toBe(selected.policyId);
     expect(body.get("policyNumber")).toBeNull();
     expect(body.get("email")).toBeNull();
     expect(body.get("phone")).toBeNull();

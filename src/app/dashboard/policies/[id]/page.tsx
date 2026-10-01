@@ -125,7 +125,7 @@ export default async function CustomerPolicyPage({
               Download policy
             </a>
           ) : null}
-          <Link href="/claim" className={buttonClassName("primary", "w-full shrink-0 sm:w-auto")}>
+          <Link href={`/claim?policy=${encodeURIComponent(policy.id)}&from=policy`} className={buttonClassName("primary", "w-full shrink-0 sm:w-auto")}>
             Make a claim
           </Link>
         </div>

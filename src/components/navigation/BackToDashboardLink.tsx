@@ -1,10 +1,14 @@
 import Link from "next/link";
 
-export function BackToDashboardLink({ className = "" }: { className?: string }) {
+export function BackToDashboardLink({
+  className = "",
+  href = "/dashboard",
+  label = "Back to dashboard",
+}: { className?: string; href?: string; label?: string }) {
   return (
     <Link
-      href="/dashboard"
-      aria-label="Back to dashboard"
+      href={href}
+      aria-label={label}
       title="Back"
       className={`inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors duration-150 hover:border-teal-200 hover:bg-teal-50 hover:text-[var(--brand-teal-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)] ${className}`}
     >
