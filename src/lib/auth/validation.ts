@@ -7,6 +7,11 @@ const password = z
   .max(72, "Password must be 72 characters or fewer.");
 
 export const loginSchema = z.object({ email, password });
+export const recoveryEmailSchema = z.object({ email: email.transform((value) => value.toLowerCase()) });
+export const recoveryPasswordSchema = z.object({ password, confirmPassword: z.string() })
+  .refine((value) => value.password === value.confirmPassword, {
+    path: ["confirmPassword"], message: "Passwords do not match.",
+  });
 
 export const signupSchema = z
   .object({

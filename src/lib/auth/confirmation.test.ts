@@ -9,6 +9,7 @@ const {
   signOutMock,
   getProfileByAuthUserIdMock,
   synchronizeVerifiedProfileEmailMock,
+  getClaimsMock,
 } = vi.hoisted(() => ({
   createServerClientMock: vi.fn(),
   exchangeCodeForSessionMock: vi.fn(),
@@ -17,9 +18,11 @@ const {
   signOutMock: vi.fn(),
   getProfileByAuthUserIdMock: vi.fn(),
   synchronizeVerifiedProfileEmailMock: vi.fn(),
+  getClaimsMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
+vi.mock("next/headers", () => ({ cookies: async () => ({ set: vi.fn(), delete: vi.fn() }) }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerClient: createServerClientMock,
 }));
@@ -39,6 +42,7 @@ function request(query: string) {
 describe("handleAuthConfirmation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.OTP_HASH_SECRET = "test-callback-secret";
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     createServerClientMock.mockResolvedValue({
       auth: {
@@ -46,10 +50,12 @@ describe("handleAuthConfirmation", () => {
         verifyOtp: verifyOtpMock,
         getUser: getUserMock,
         signOut: signOutMock,
+        getClaims: getClaimsMock,
       },
     });
     exchangeCodeForSessionMock.mockResolvedValue({ error: null });
     verifyOtpMock.mockResolvedValue({ error: null });
+    getClaimsMock.mockResolvedValue({ data: { claims: { sub: "auth-user-id", session_id: "session-1", amr: [{ method: "recovery", timestamp: Math.floor(Date.now() / 1000) }] } }, error: null });
     getUserMock.mockResolvedValue({
       data: { user: { id: "auth-user-id", email: "customer@example.com" } },
       error: null,
@@ -62,6 +68,30 @@ describe("handleAuthConfirmation", () => {
       profile,
       changed: false,
     }));
+  });
+
+  it("routes verified PKCE recovery to reset without profile mutation", async () => {
+    exchangeCodeForSessionMock.mockResolvedValue({ data: { redirectType: "recovery" }, error: null });
+    const response = await handleAuthConfirmation(request("?code=recovery-code&intent=recovery"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
+    expect(getProfileByAuthUserIdMock).not.toHaveBeenCalled();
+    expect(synchronizeVerifiedProfileEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("does not accept a forged recovery intent on a normal login session", async () => {
+    exchangeCodeForSessionMock.mockResolvedValue({ data: { redirectType: "recovery" }, error: null });
+    getClaimsMock.mockResolvedValue({ data: { claims: { sub: "auth-user-id", session_id: "session-1", amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }] } }, error: null });
+    const response = await handleAuthConfirmation(request("?code=signup-code&intent=recovery"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password?error=invalid-recovery");
+  });
+
+  it("accepts only a successfully verified recovery token hash", async () => {
+    const response = await handleAuthConfirmation(request("?token_hash=recovery-hash&type=recovery"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
+    expect(verifyOtpMock).toHaveBeenCalledWith({ token_hash: "recovery-hash", type: "recovery" });
+    verifyOtpMock.mockResolvedValue({ error: { code: "otp_expired", message: "expired" } });
+    const expired = await handleAuthConfirmation(request("?token_hash=expired&type=recovery"));
+    expect(expired.headers.get("location")).toBe("http://localhost:3000/reset-password?error=invalid-recovery");
   });
 
   it("exchanges a PKCE code, loads the profile, and redirects a customer", async () => {

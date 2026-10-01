@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { SignupForm } from "@/components/auth/AuthForms";
+import { LoginForm, SignupForm } from "@/components/auth/AuthForms";
 
 const { signupActionMock, loginActionMock } = vi.hoisted(() => ({
   signupActionMock: vi.fn(),
@@ -31,6 +31,12 @@ function fillValidForm() {
     target: { value: "password1" },
   });
 }
+
+it("offers a separate password recovery link from sign in", () => {
+  render(<LoginForm />);
+  expect(screen.getByRole("link", { name: "Forgot password?" }).getAttribute("href")).toBe("/forgot-password");
+  cleanup();
+});
 
 function expectValues(values: {
   fullName?: string;

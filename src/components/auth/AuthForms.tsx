@@ -44,6 +44,9 @@ export function LoginForm() {
       <Field label="Password" htmlFor="password" error={state.fields?.password?.[0]}>
         <TextInput id="password" name="password" type="password" autoComplete="current-password" required />
       </Field>
+      <div className="text-right">
+        <Link href="/forgot-password" className="rounded text-sm text-[var(--brand-teal-deep)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-teal)]">Forgot password?</Link>
+      </div>
       {state.message ? <Alert tone="error">{state.message}</Alert> : null}
       <SubmitButton pending={pending} label="Sign in" />
       <p className="text-center text-sm text-slate-600">

@@ -7,7 +7,6 @@ import {
   hasCurrentCookieNoticeAcknowledgement,
   storeCookieNoticeAcknowledgement,
 } from "@/lib/privacy/cookie-notice";
-import { keyboardTargets } from "@/lib/accessibility/focus";
 
 const COOKIE_NOTICE_EVENT = "insureflow-cookie-notice-change";
 const COOKIE_NOTICE_ANIMATION_MS = 300;
@@ -47,9 +46,13 @@ export function PublicCookieNotice() {
 
     const notice = noticeRef.current;
     if (notice?.contains(document.activeElement)) {
-      const outside = keyboardTargets(document.body).filter((element) => !notice.contains(element));
-      const next = outside.find((element) => Boolean(notice.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING));
-      (next ?? outside.at(-1))?.focus();
+      // Neutral focus cannot open focus-triggered UI (for example hero hotspots).
+      // Temporary -1 keeps the document out of the normal Tab order.
+      const previousTabIndex = document.body.getAttribute("tabindex");
+      document.body.setAttribute("tabindex", "-1");
+      document.body.focus({ preventScroll: true });
+      if (previousTabIndex === null) document.body.removeAttribute("tabindex");
+      else document.body.setAttribute("tabindex", previousTabIndex);
     }
 
     setIsExiting(true);
