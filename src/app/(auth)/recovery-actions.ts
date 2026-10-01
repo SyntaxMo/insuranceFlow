@@ -16,7 +16,7 @@ export async function requestPasswordReset(_previous: AuthFormState, formData: F
   } catch {
     // Do not expose account existence, delivery failures, or provider details.
   }
-  return { success: true, message: "If an account exists for that email, we’ve sent password reset instructions." };
+  return { success: true, message: "If an account exists for that email, we’ve sent a password reset link." };
 }
 
 export async function resetPassword(_previous: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -28,7 +28,7 @@ export async function resetPassword(_previous: AuthFormState, formData: FormData
     const { error } = await client.auth.updateUser({ password: parsed.data.password });
     if (error) {
       if (error.code === "weak_password" || error.code === "same_password") {
-        return { fields: { password: ["Choose a stronger password that differs from your current password."] } };
+        return { fields: { password: ["Your new password must be different from your current password."] } };
       }
       if (error.status === 429) return { message: "Please wait before trying again." };
       return { message: "We couldn’t update your password. Try again or request a new reset link." };

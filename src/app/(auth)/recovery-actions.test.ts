@@ -18,6 +18,7 @@ beforeEach(() => {
 it("requests native recovery with normalized email and production callback", async () => {
   const result = await requestPasswordReset({}, form({ email: " Customer@Example.com " }));
   expect(result.success).toBe(true);
+  expect(result.message).toBe("If an account exists for that email, we’ve sent a password reset link.");
   expect(auth.resetPasswordForEmail).toHaveBeenCalledWith("customer@example.com", { redirectTo: "https://insureflow.example/auth/callback?intent=recovery" });
 });
 it("returns identical responses for existing and unknown accounts and provider failures", async () => {
@@ -53,5 +54,12 @@ it("keeps recovery usable and sanitizes a rejected update", async () => {
   const result = await resetPassword({}, form({ password: "password123", confirmPassword: "password123" }));
   expect(result.success).not.toBe(true);
   expect(JSON.stringify(result)).not.toContain("raw sensitive");
+  expect(clear).not.toHaveBeenCalled();
+});
+it("explains password reuse without exposing provider details", async () => {
+  auth.updateUser.mockResolvedValue({ error: { message: "raw provider details", code: "same_password" } });
+  const result = await resetPassword({}, form({ password: "password123", confirmPassword: "password123" }));
+  expect(result.fields?.password).toEqual(["Your new password must be different from your current password."]);
+  expect(result.success).not.toBe(true);
   expect(clear).not.toHaveBeenCalled();
 });

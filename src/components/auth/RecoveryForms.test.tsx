@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const { request, reset } = vi.hoisted(() => ({ request: vi.fn(), reset: vi.fn() }));
 vi.mock("@/app/(auth)/recovery-actions", () => ({ requestPasswordReset: request, resetPassword: reset }));
 import { ForgotPasswordForm, ResetPasswordForm } from "./RecoveryForms";
-beforeEach(() => { vi.clearAllMocks(); reset.mockResolvedValue({ success: true }); request.mockResolvedValue({ success: true, message: "If an account exists for that email, we’ve sent password reset instructions." }); });
+beforeEach(() => { vi.clearAllMocks(); reset.mockResolvedValue({ success: true }); request.mockResolvedValue({ success: true, message: "If an account exists for that email, we’ve sent a password reset link." }); });
 afterEach(cleanup);
 it("shows a generic request confirmation and sign-in navigation", async () => {
   render(<ForgotPasswordForm />);
