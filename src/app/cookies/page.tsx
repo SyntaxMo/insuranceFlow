@@ -49,7 +49,7 @@ export default async function CookiePolicyPage() {
         {
           title: "Cookie notice acknowledgement",
           paragraphs: [
-            "When you select Got it, InsureFlow stores a small acknowledgement in your browser so the notice does not appear repeatedly.",
+            "When you select “Got it”, InsureFlow stores a small acknowledgement in your browser so the notice does not appear repeatedly.",
             "This acknowledgement does not contain your name, email address, account ID, claim information, policy information, or other personal data.",
           ],
         },
@@ -67,7 +67,7 @@ export default async function CookiePolicyPage() {
             "Users should avoid submitting real or sensitive personal information and should use demonstration data wherever possible.",
           ],
         },
-        { title: "Last updated", paragraphs: ["September 21, 2026"] },
+        { title: "Last updated", paragraphs: ["October 1, 2026"] },
       ]}
     />
   );

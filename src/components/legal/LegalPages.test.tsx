@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getAuthenticatedProfileMock } = vi.hoisted(() => ({
@@ -14,10 +14,10 @@ vi.mock("@/lib/auth/session", () => ({
   isStaffRole: (role: string) => role === "CLAIMS_OFFICER" || role === "ADMIN",
   routeForRole: (role: string) => role === "CUSTOMER" ? "/dashboard" : "/admin",
 }));
-import TermsPage from "@/app/terms/page";
-import PrivacyPage from "@/app/privacy/page";
-import DisclaimerPage from "@/app/disclaimer/page";
-import CookiePolicyPage from "@/app/cookies/page";
+import TermsPage, { metadata as termsMetadata } from "@/app/terms/page";
+import PrivacyPage, { metadata as privacyMetadata } from "@/app/privacy/page";
+import DisclaimerPage, { metadata as disclaimerMetadata } from "@/app/disclaimer/page";
+import CookiePolicyPage, { metadata as cookieMetadata } from "@/app/cookies/page";
 import { SiteFooter } from "@/components/layout/SiteChrome";
 
 describe("public legal information", () => {
@@ -29,13 +29,17 @@ describe("public legal information", () => {
   });
 
   it.each([
-    ["Terms & Conditions", TermsPage],
-    ["Privacy Policy", PrivacyPage],
-    ["Insurance & Demo Disclaimer", DisclaimerPage],
-    ["Cookie Policy", CookiePolicyPage],
-  ])("renders the %s route content", async (title, Page) => {
-    render(await Page());
+    ["Terms & Conditions", TermsPage, termsMetadata],
+    ["Privacy Policy", PrivacyPage, privacyMetadata],
+    ["Insurance & Demo Disclaimer", DisclaimerPage, disclaimerMetadata],
+    ["Cookie Policy", CookiePolicyPage, cookieMetadata],
+  ])("renders the %s route content", async (title, Page, metadata) => {
+    render(<main>{await Page()}</main>);
     expect(screen.getByRole("heading", { level: 1, name: title })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(metadata.title).toBe(`${title} | InsureFlow`);
+    expect(within(screen.getByRole("region", { name: "Last updated" })).getByText("October 1, 2026")).toBeTruthy();
     expect(screen.getByRole("link", { name: "← Back to InsureFlow" }).getAttribute("href")).toBe("/");
     expect(screen.queryByText("InsureFlow transparency")).toBeNull();
     expect(screen.queryByText("Important information")).toBeNull();
@@ -71,9 +75,35 @@ describe("public legal information", () => {
     render(await PrivacyPage());
     expect(screen.getByRole("heading", { name: "Verification and operational records" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Data access and deletion" })).toBeTruthy();
+    expect(screen.getByText(/does not provide a complete self-service data export or deletion workflow/)).toBeTruthy();
     expect(screen.getByText(/Depending on the model selected through OpenRouter/)).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Cookies and browser storage" })).toBeTruthy();
-    expect(screen.getByText(/does not currently use advertising or analytics cookies/)).toBeTruthy();
+    expect(screen.getByText(/does not currently use advertising, analytics, marketing, or behavioral-tracking cookies/)).toBeTruthy();
+  });
+
+  it("explains AI metadata minimization without implying evidence is anonymized", async () => {
+    render(await PrivacyPage());
+    const ai = within(screen.getByRole("region", { name: "AI processing" }));
+    expect(ai.getByText(/OpenRouter.*downstream model provider/)).toBeTruthy();
+    expect(ai.getByText(/coverage guidance.*vehicle information/i)).toBeTruthy();
+    expect(ai.getByText(/minimizes.*account.*internal metadata/i)).toBeTruthy();
+    expect(ai.getByText(/not guaranteed to be anonymized before processing/)).toBeTruthy();
+    expect(ai.getByText(/personal or sensitive information/)).toBeTruthy();
+    expect(ai.getByText(/human review/)).toBeTruthy();
+  });
+
+  it("describes retention, recovery emails, and private document access without operational details", async () => {
+    render(await PrivacyPage());
+    expect(within(screen.getByRole("region", { name: "Data retention" })).getByText(/does not currently publish a fixed retention schedule/)).toBeTruthy();
+    const emails = within(screen.getByRole("region", { name: "Email communications" }));
+    expect(emails.getByText(/Resend/)).toBeTruthy();
+    expect(emails.getByText(/password reset links/)).toBeTruthy();
+    expect(emails.getByText(/password-change verification/)).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Verification and operational records" })).getByText(/password verification and recovery/)).toBeTruthy();
+    const security = within(screen.getByRole("region", { name: "Authentication and security" }));
+    expect(security.getByText(/private access controls.*short-lived signed document links/)).toBeTruthy();
+    expect(security.queryByText(/service.role|bucket|\b120\b|\b180\b|RLS/)).toBeNull();
+    expect(screen.queryByText(/Google Fonts|GDPR compliance|PDPL compliance/)).toBeNull();
   });
 
   it("describes only essential storage and future optional controls", async () => {

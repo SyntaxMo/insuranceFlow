@@ -14,12 +14,12 @@ export default async function TermsPage() {
     { title: "Simulated policy issuance", paragraphs: ["Policies produced by InsureFlow are demonstration records only. They are not insurance contracts, do not create actual insurance coverage, and are not legally binding policy documents."] },
     { title: "Simulated payments", paragraphs: ["The payment step is simulated. No card details are collected, no money is transferred, and no financial transaction takes place."] },
     { title: "Claims demonstration", paragraphs: ["Claim submission and review features demonstrate a possible workflow. They do not notify a real insurer, open a real claim, establish liability, or create entitlement to payment."] },
-    { title: "AI-assisted features", paragraphs: ["AI may assist with document analysis, summaries, missing information, inconsistencies, and risk flags. AI output may be incomplete or inaccurate. AI-assisted outputs are advisory and require human review."], bullets: ["AI does not approve or reject claims.", "AI does not issue binding coverage decisions.", "AI does not set real premiums or perform real underwriting."] },
+    { title: "AI-assisted features", paragraphs: ["AI may offer advisory coverage guidance and assist with document analysis, summaries, missing information, inconsistencies, and risk flags. AI output may be incomplete or inaccurate. AI-assisted outputs are advisory and require human review."], bullets: ["AI does not approve or reject claims.", "AI does not issue binding coverage decisions.", "AI does not set real premiums or perform real underwriting."] },
     { title: "Prohibited use", paragraphs: ["Do not use InsureFlow to misrepresent insurance coverage, process real financial transactions, make real insurance decisions, or upload unlawful or harmful material."] },
     { title: "Availability and changes", paragraphs: ["Features, example data, and demonstration behavior may change or become unavailable as the portfolio project evolves."] },
     { title: "Limitation of reliance", paragraphs: ["Do not rely on InsureFlow for financial, legal, insurance, claims, safety, or regulatory decisions. Seek advice from appropriately qualified professionals and licensed providers."] },
-    { title: "Third-party services", paragraphs: ["InsureFlow may use third-party services to support authentication, data storage, transactional email, and AI-assisted features. Their availability and data-processing practices are subject to their own terms and policies."] },
+    { title: "Third-party services", paragraphs: ["InsureFlow uses third-party services to support authentication, data storage, transactional and verification email, and AI-assisted features. AI requests may also be processed by downstream model providers. Their availability and data-processing practices are subject to their own terms and policies."] },
     { title: "Contact", paragraphs: ["For demonstration-related questions, use the contact channel provided with the InsureFlow project portfolio."] },
-    { title: "Last updated", paragraphs: ["September 13, 2026"] },
+    { title: "Last updated", paragraphs: ["October 1, 2026"] },
   ]} />;
 }
