@@ -73,8 +73,25 @@ describe("ClaimOfficerActions", () => {
         body: JSON.stringify({ action: "start_review", note: "" }),
       }),
     );
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog")).toBeTruthy();
     resolveFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     await waitFor(() => expect(refreshMock).toHaveBeenCalledOnce());
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Start review" })));
+  });
+
+  it("hands focus to Officer actions when a successful transition removes its trigger", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const view = render(<ClaimOfficerActions claimId="claim-1" status="SUBMITTED" />);
+    fireEvent.click(screen.getByRole("button", { name: "Start review" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Start review" }));
+    await waitFor(() => expect(refreshMock).toHaveBeenCalledOnce());
+    view.rerender(<ClaimOfficerActions claimId="claim-1" status="UNDER_REVIEW" />);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Officer actions" })));
   });
 
   it("keeps a stale Start review dialog open and shows the safe server error", async () => {

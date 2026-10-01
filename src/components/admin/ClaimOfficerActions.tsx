@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, TextArea } from "@/components/ui/Forms";
 import type { OfficerClaimAction } from "@/lib/claims/workflow";
+import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 type DialogConfig = {
   action: OfficerClaimAction;
@@ -78,34 +79,24 @@ function ActionDialog({
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     (config.noteLabel ? inputRef.current : closeRef.current)?.focus();
+  }, [config.noteLabel]);
+  useEffect(() => {
+    preserveDialogFocus(dialogRef.current);
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !pending) {
         event.preventDefault();
         onClose();
         return;
       }
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      trapDialogTab(event, dialogRef.current);
     };
     document.addEventListener("keydown", listener);
     return () => document.removeEventListener("keydown", listener);
-  }, [config.noteLabel, onClose, pending]);
+  }, [onClose, pending]);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !pending) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div><h2 id={titleId} className="text-xl font-semibold text-[var(--brand-navy)]">{config.title}</h2><p id={descriptionId} className="mt-2 text-sm leading-6 text-slate-600">{config.description}</p></div>
           <button ref={closeRef} type="button" onClick={onClose} disabled={pending} aria-label="Close dialog" className="rounded-lg px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]">×</button>
@@ -127,8 +118,15 @@ export function ClaimOfficerActions({ claimId, status }: { claimId: string; stat
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
   const dialogTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const actionsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const restoreAfterSuccessRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (dialog || pending || !restoreAfterSuccessRef.current) return;
+    const trigger = dialogTriggerRef.current;
+    (trigger?.isConnected && !trigger.disabled ? trigger : actionsHeadingRef.current)?.focus();
+  }, [dialog, pending, status]);
 
   async function run(action: OfficerClaimAction, note: string | null = null) {
     if (pendingRef.current) return;
@@ -148,6 +146,7 @@ export function ClaimOfficerActions({ claimId, status }: { claimId: string; stat
         return;
       }
       if (payload.emailDelivered === false) setNotice("The claim was updated, but the customer email could not be delivered.");
+      restoreAfterSuccessRef.current = true;
       setDialog(null);
       router.refresh();
     } catch {
@@ -165,6 +164,7 @@ export function ClaimOfficerActions({ claimId, status }: { claimId: string; stat
   }, []);
 
   function openDialog(config: DialogConfig, trigger: HTMLButtonElement) {
+    restoreAfterSuccessRef.current = false;
     dialogTriggerRef.current = trigger;
     setError(null);
     setDialog(config);
@@ -178,7 +178,7 @@ export function ClaimOfficerActions({ claimId, status }: { claimId: string; stat
 
   return (
     <Card className="space-y-4">
-      <div><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Officer actions</h2><p className="mt-1 text-sm text-slate-600">Human decisions are recorded with the authenticated officer and timestamp.</p></div>
+      <div><h2 ref={actionsHeadingRef} tabIndex={-1} className="text-lg font-semibold text-[var(--brand-navy)]">Officer actions</h2><p className="mt-1 text-sm text-slate-600">Human decisions are recorded with the authenticated officer and timestamp.</p></div>
       {notice ? <Alert tone="info">{notice}</Alert> : null}
       {!dialog && error ? <Alert tone="error">{error}</Alert> : null}
       {normalized === "SUBMITTED" ? <Button type="button" onClick={(event) => openDialog(CONFIGS.start_review, event.currentTarget)}>Start review</Button> : null}

@@ -9,6 +9,7 @@ import {
 } from "@/app/dashboard/profile/actions";
 import { Button, TextInput } from "@/components/ui/Forms";
 import { PencilIcon } from "@/components/ui/PencilIcon";
+import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 const initialRequestState: PasswordCodeRequestState = {};
 const initialPasswordState: PasswordChangeState = {};
@@ -78,34 +79,23 @@ function ChangePasswordDialog({
   }, [passwordState.success, requestState.success]);
 
   useEffect(() => {
+    preserveDialogFocus(dialogRef.current);
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape" && !pending) {
         event.preventDefault();
         onClose();
         return;
       }
-      if (event.key !== "Tab") return;
-
-      const focusable = Array.from(
-        dialogRef.current?.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      );
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      trapDialogTab(event, dialogRef.current);
     }
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose, pending]);
+
+  useEffect(() => {
+    if (passwordState.fields) dialogRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [passwordState]);
 
   const codeError = clientCodeError ?? passwordState.fields?.verificationCode?.[0];
   const passwordError = passwordState.fields?.password?.[0];
@@ -121,6 +111,7 @@ function ChangePasswordDialog({
     >
       <div
         ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="change-password-title"

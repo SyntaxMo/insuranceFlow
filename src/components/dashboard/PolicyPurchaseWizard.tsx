@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { getDemoPolicyQuote, issueDemoPolicy, type IssuePolicyState } from "@/app/dashboard/policies/new/actions";
 import { CoverageAssistant } from "@/components/dashboard/CoverageAssistant";
@@ -66,6 +66,21 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
   const [consentAccepted, setConsentAccepted] = useState(false);
   const initialState: IssuePolicyState = { status: "idle" };
   const [issueState, issueAction] = useActionState(issueDemoPolicy, initialState);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const currentStep = issueState.status === "success" ? 6 : step;
+  const previousStepRef = useRef(currentStep);
+  useEffect(() => {
+    if (previousStepRef.current !== currentStep) {
+      stepHeadingRef.current?.focus();
+      previousStepRef.current = currentStep;
+    }
+  }, [currentStep]);
+
+  function focusVehicleError(errors: Record<string, string>) {
+    const ids = { make: "make", model: "model", year: "year", plateNumber: "plate", vin: "vin", estimatedVehicleValue: "vehicle-value" };
+    const first = (Object.keys(ids) as (keyof typeof ids)[]).find((key) => errors[key]);
+    if (first) stepHeadingRef.current?.parentElement?.querySelector<HTMLElement>(`#${ids[first]}`)?.focus();
+  }
 
   const update = (name: keyof FormValues, value: string) => {
     setValues((current) => ({ ...current, [name]: value }));
@@ -77,7 +92,9 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
   const continueVehicle = () => {
     const parsed = vehiclePurchaseSchema.safeParse(values);
     if (!parsed.success) {
-      setFieldErrors(flattenPurchaseErrors(parsed.error));
+      const errors = flattenPurchaseErrors(parsed.error);
+      setFieldErrors(errors);
+      focusVehicleError(errors);
       return;
     }
     setValues({ ...values, ...parsed.data, year: String(parsed.data.year), estimatedVehicleValue: String(parsed.data.estimatedVehicleValue) });
@@ -89,6 +106,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
     if (quoting) return;
     if (!coverage) {
       setCoverageValidationAttempted(true);
+      stepHeadingRef.current?.parentElement?.querySelector<HTMLButtonElement>('button[aria-pressed]')?.focus();
       return;
     }
     setQuoting(true);
@@ -116,7 +134,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
         <div className="px-5 py-7 sm:px-8 sm:py-9">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-700 ring-1 ring-emerald-200" aria-hidden="true">✓</div>
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-teal)]">Policy issued</p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)] sm:text-4xl">You&apos;re covered</h2>
+        <h2 ref={stepHeadingRef} tabIndex={-1} className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)] sm:text-4xl">You&apos;re covered</h2>
         <p className="mt-2 text-slate-600">Your motor policy has been issued successfully.</p>
         {issueState.deliveryWarning ? <div className="mx-auto mt-5 max-w-xl text-left"><Alert tone="info">{issueState.deliveryWarning}</Alert></div> : null}
         <dl className="mx-auto mt-7 max-w-xl rounded-2xl bg-slate-50 px-4 py-2 text-left ring-1 ring-slate-200 sm:px-5">
@@ -145,7 +163,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
 
       {step === 1 ? (
         <section aria-labelledby="vehicle-step-heading">
-          <h2 id="vehicle-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Tell us about your vehicle</h2>
+          <h2 ref={stepHeadingRef} tabIndex={-1} id="vehicle-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Tell us about your vehicle</h2>
           <p className="mt-2 text-sm text-slate-600">Enter the vehicle details used for this demonstration quote. Nothing is saved yet.</p>
           <div className="mt-6 grid gap-x-5 gap-y-6 sm:grid-cols-2">
             <Field label="Make" htmlFor="make" error={fieldErrors.make}><VehicleMakeAutocomplete value={values.make} onChange={(value) => update("make", value)} /></Field>
@@ -161,7 +179,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
 
       {step === 2 ? (
         <section aria-labelledby="coverage-step-heading">
-          <h2 id="coverage-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Choose coverage</h2>
+          <h2 ref={stepHeadingRef} tabIndex={-1} id="coverage-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Choose coverage</h2>
           <p className="mt-2 text-sm text-slate-600">These simplified options and limits are for the InsureFlow demonstration.</p>
           <div className="mt-6 grid items-stretch gap-4 md:grid-cols-2">
             {([
@@ -201,7 +219,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
       {step === 3 && quoteView ? (
         <section aria-labelledby="quote-step-heading">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--brand-teal)]">Simulated quote</p>
-          <h2 id="quote-step-heading" className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Your annual quote</h2>
+          <h2 ref={stepHeadingRef} tabIndex={-1} id="quote-step-heading" className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[var(--brand-navy)]">Your annual quote</h2>
           <p className="mt-2 text-sm text-slate-600">This quote is generated for the InsureFlow demonstration experience.</p>
           <div data-slot="quote-summary" className="mt-6 grid items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.45)] sm:p-6 md:grid-cols-[minmax(0,1fr)_minmax(12rem,15rem)] md:gap-6">
             <dl className="min-w-0"><SummaryRow label="Vehicle" value={`${values.make} ${values.model} (${values.year})`} /><SummaryRow label="Plate" value={values.plateNumber} /><SummaryRow label="Coverage" value={formatCoverageType(quoteView.quote.coverageLabel)} /><SummaryRow label="Estimated vehicle value" value={formatCurrency(Number(values.estimatedVehicleValue))} /><SummaryRow label="Excess" value={formatCurrency(quoteView.quote.excess)} /><SummaryRow label="Coverage limit" value={formatCurrency(quoteView.quote.coverageLimit)} /><SummaryRow label="Policy term" value="12 months" /></dl>
@@ -218,7 +236,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
 
       {step === 4 && quoteView ? (
         <section aria-labelledby="review-step-heading">
-          <h2 id="review-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Review your details</h2>
+          <h2 ref={stepHeadingRef} tabIndex={-1} id="review-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Review your details</h2>
           <p className="mt-2 text-sm text-slate-600">Check the information below before continuing to the simulated payment.</p>
           <div className="mt-6 grid items-stretch gap-5 md:grid-cols-2">
             <div className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"><h3 className="font-semibold text-[var(--brand-navy)]">Customer</h3><dl className="mt-3"><SummaryRow label="Name" value={customer.fullName || "Customer"} /><SummaryRow label="Email" value={customer.email || "Not available"} /></dl></div>
@@ -246,7 +264,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
 
       {step === 5 && quoteView && coverage ? (
         <section aria-labelledby="payment-step-heading">
-          <h2 id="payment-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Payment</h2>
+          <h2 ref={stepHeadingRef} tabIndex={-1} id="payment-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Payment</h2>
           <p className="mt-2 text-sm text-slate-600">Complete the demonstration payment to issue this policy to your account.</p>
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm text-slate-500">Annual premium</p><p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight text-[var(--brand-navy)] sm:text-4xl">{formatCurrency(quoteView.quote.annualPremium)}</p></div><p className="text-sm font-medium text-slate-500">12-month policy</p></div><div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">This is a simulated payment for the InsureFlow portfolio demonstration. No real payment will be processed.</div><dl className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"><dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Payment method</dt><dd className="mt-1 font-semibold text-[var(--brand-navy)]">Demo payment</dd></dl></div>
           <form action={issueAction} className="mt-7">

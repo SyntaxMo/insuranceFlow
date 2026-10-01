@@ -6,6 +6,7 @@ import {
   type RemovePolicyState,
 } from "@/app/dashboard/policies/actions";
 import { Alert, Button } from "@/components/ui/Forms";
+import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 const initialState: RemovePolicyState = {};
 
@@ -26,6 +27,7 @@ export function PolicyAccessControl({
   const menuItemRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const removeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [state, action, pending] = useActionState(
     removeLinkedPolicyAction,
     initialState,
@@ -64,11 +66,17 @@ export function PolicyAccessControl({
   useEffect(() => {
     if (!modalOpen) return;
     cancelRef.current?.focus();
+  }, [modalOpen]);
+  useEffect(() => {
+    if (!modalOpen) return;
+    preserveDialogFocus(dialogRef.current);
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape" && !pending) {
+        event.preventDefault();
         setModalOpen(false);
         window.requestAnimationFrame(() => triggerRef.current?.focus());
       }
+      trapDialogTab(event, dialogRef.current);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -108,7 +116,7 @@ export function PolicyAccessControl({
                 type="button"
                 role="menuitem"
                 onClick={openConfirmation}
-                className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
+                className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]"
               >
                 Remove from account
               </button>
@@ -130,20 +138,12 @@ export function PolicyAccessControl({
           }}
         >
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby={`remove-policy-title-${policyId}`}
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
-            onKeyDown={(event) => {
-              if (event.key !== "Tab") return;
-              if (event.shiftKey && document.activeElement === cancelRef.current) {
-                event.preventDefault();
-                removeRef.current?.focus();
-              } else if (!event.shiftKey && document.activeElement === removeRef.current) {
-                event.preventDefault();
-                cancelRef.current?.focus();
-              }
-            }}
           >
             <h2
               id={`remove-policy-title-${policyId}`}

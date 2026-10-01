@@ -101,12 +101,35 @@ describe("ClaimWizard saved policy selection", () => {
     await user.click(linked);
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("Accident details")).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Accident details" }));
     expect(screen.getByText("Claiming under")).toBeTruthy();
     expect(screen.getByText("MOT-2026-LINKED")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Choose a policy" }));
     expect((screen.getByRole("radio", { name: /MOT-2026-LINKED/ }) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("supports keyboard policy selection and focuses the first invalid accident or document field", async () => {
+    const user = userEvent.setup();
+    renderWizard([directPolicy]);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("radio"));
+    await user.keyboard(" ");
+    expect((screen.getByRole("radio") as HTMLInputElement).checked).toBe(true);
+    await user.tab();
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Accident details" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Accident date"));
+    fireEvent.change(screen.getByLabelText("Accident date"), { target: { value: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10) } });
+    await user.type(screen.getByLabelText("Accident location"), "Manama Highway");
+    await user.type(screen.getByLabelText("Accident description"), "The vehicle was struck from behind.");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Supporting documents" }));
+    await user.click(screen.getByRole("button", { name: "Continue to review" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Repair estimate (required)"));
   });
 
   it("requires an explicit choice even for one policy on generic entry", () => {
@@ -178,7 +201,12 @@ describe("ClaimWizard saved policy selection", () => {
     await user.upload(screen.getByLabelText("Police report (optional)"), police);
     await user.click(screen.getByRole("button", { name: "Remove police.pdf" }));
     expect(screen.queryByRole("button", { name: "Remove police.pdf" })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByLabelText("Police report (optional)"));
+    await user.click(screen.getByRole("button", { name: "Remove accident.jpg" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Accident photos (required, multiple allowed)"));
+    await user.upload(screen.getByLabelText("Accident photos (required, multiple allowed)"), photo);
     await user.click(screen.getByRole("button", { name: "Continue to review" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Review & submit" }));
     expect(screen.getByText(selected.policyNumber)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Submit Claim" }));
 

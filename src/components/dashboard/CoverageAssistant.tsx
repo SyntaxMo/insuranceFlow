@@ -10,6 +10,7 @@ import {
   type CoverageRecommendation,
 } from "@/lib/coverage-assistant/schema";
 import type { DemoCoverage } from "@/lib/policies/quote";
+import { trapDialogTab } from "@/lib/accessibility/focus";
 
 const LOADING_MESSAGES = [
   "Reviewing your priorities",
@@ -71,20 +72,7 @@ export function CoverageAssistant({
         closeAssistant();
         return;
       }
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      trapDialogTab(event, dialogRef.current);
     }
 
     document.addEventListener("keydown", onKeyDown);
@@ -199,6 +187,7 @@ export function CoverageAssistant({
           <div
             ref={dialogRef}
             role="dialog"
+            tabIndex={-1}
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={descriptionId}

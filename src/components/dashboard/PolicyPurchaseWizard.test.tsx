@@ -24,6 +24,7 @@ async function reachCoverageStep() {
   await user.type(screen.getByLabelText("Plate number"), "927410");
   await user.type(screen.getByLabelText("Estimated vehicle value"), "9500");
   await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
+  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Choose coverage" }));
   return user;
 }
 
@@ -32,7 +33,9 @@ async function reachReviewStep() {
   await user.click(screen.getByRole("button", { name: "Comprehensive coverage" }));
   await user.click(screen.getByRole("button", { name: "See your quote" }));
   await screen.findByRole("heading", { name: "Your annual quote" });
+  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Your annual quote" }));
   await user.click(screen.getByRole("button", { name: "Review details" }));
+  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Review your details" }));
   return user;
 }
 
@@ -40,6 +43,7 @@ async function reachPaymentStep() {
   const user = await reachReviewStep();
   await user.click(screen.getByRole("checkbox"));
   await user.click(screen.getByRole("button", { name: "Continue to payment" }));
+  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Payment" }));
   return user;
 }
 
@@ -65,6 +69,24 @@ describe("PolicyPurchaseWizard presentation", () => {
       startDate: "2026-09-13",
       endDate: "2027-09-12",
     });
+  });
+
+  it("focuses invalid vehicle fields and restores step context when going back", async () => {
+    const user = userEvent.setup();
+    render(<PolicyPurchaseWizard customer={{ fullName: "Maya", email: "maya@example.com" }} requestId="request-1" />);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByLabelText("Make"));
+    await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Make"));
+    await user.type(screen.getByLabelText("Make"), "Toyota");
+    await user.type(screen.getByLabelText("Model"), "Corolla");
+    await user.type(screen.getByLabelText("Plate number"), "927410");
+    await user.type(screen.getByLabelText("Estimated vehicle value"), "9500");
+    await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Choose coverage" }));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Tell us about your vehicle" }));
+    expect((screen.getByLabelText("Model") as HTMLInputElement).value).toBe("Corolla");
   });
 
   it("communicates coverage selection with text and aria state", async () => {

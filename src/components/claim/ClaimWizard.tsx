@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ClaimPolicyOption, VerifiedPolicySummary } from "@/types/database";
@@ -252,6 +252,19 @@ export function ClaimWizard({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const wizardRef = useRef<HTMLDivElement>(null);
+  const previousStepRef = useRef(step);
+
+  useEffect(() => {
+    if (previousStepRef.current !== step) {
+      wizardRef.current?.querySelector<HTMLElement>("h2")?.focus();
+      previousStepRef.current = step;
+    }
+  }, [step]);
+
+  function focusField(id: string) {
+    wizardRef.current?.querySelector<HTMLElement>(`#${id}`)?.focus();
+  }
 
   const photoPreviews = useMemo(
     () =>
@@ -265,6 +278,7 @@ export function ClaimWizard({
   function goToAccident() {
     if (!policy) {
       setPolicyError("Choose a policy to continue.");
+      wizardRef.current?.querySelector<HTMLInputElement>('input[name="claimPolicy"]')?.focus();
       return;
     }
     setStep(2);
@@ -273,14 +287,24 @@ export function ClaimWizard({
   function goToDocuments() {
     const errors = validateAccidentForm(accident);
     setAccidentErrors(errors);
-    if (!isAccidentFormValid(accident)) return;
+    if (!isAccidentFormValid(accident)) {
+      const first = ["accidentDate", "accidentLocation", "description", "email", "phone"]
+        .find((id) => errors[id as keyof typeof errors]);
+      if (first) focusField(first);
+      return;
+    }
     setStep(3);
   }
 
   function goToReview() {
     const errors = validateDocuments(files);
     setFileErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      const first = ["policeReport", "repairEstimate", "accidentPhotos"]
+        .find((id) => errors[id as keyof typeof errors]);
+      if (first) focusField(first);
+      return;
+    }
     setStep(4);
   }
 
@@ -345,6 +369,7 @@ export function ClaimWizard({
       ...prev,
       accidentPhotos: prev.accidentPhotos.filter((_, i) => i !== index),
     }));
+    focusField("accidentPhotos");
   }
 
   async function handleSubmit() {
@@ -397,13 +422,13 @@ export function ClaimWizard({
   }
 
   return (
-    <div>
+    <div ref={wizardRef}>
       <StepIndicator current={step} />
 
       {step === 1 && (
         <Card className="space-y-5">
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
+            <h2 tabIndex={-1} className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
               Choose a policy
             </h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -456,7 +481,7 @@ export function ClaimWizard({
       {step === 2 && (
         <Card className="space-y-5">
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
+            <h2 tabIndex={-1} className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
               Accident details
             </h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -563,7 +588,7 @@ export function ClaimWizard({
       {step === 3 && (
         <Card className="space-y-5">
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
+            <h2 tabIndex={-1} className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
               Supporting documents
             </h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -592,9 +617,10 @@ export function ClaimWizard({
                   variant="danger"
                   className="px-2 py-1 text-xs"
                   aria-label={`Remove ${files.policeReport.name}`}
-                  onClick={() =>
-                    setFiles((prev) => ({ ...prev, policeReport: null }))
-                  }
+                  onClick={() => {
+                    setFiles((prev) => ({ ...prev, policeReport: null }));
+                    focusField("policeReport");
+                  }}
                 >
                   Remove
                 </Button>
@@ -621,9 +647,10 @@ export function ClaimWizard({
                   variant="danger"
                   className="px-2 py-1 text-xs"
                   aria-label={`Remove ${files.repairEstimate.name}`}
-                  onClick={() =>
-                    setFiles((prev) => ({ ...prev, repairEstimate: null }))
-                  }
+                  onClick={() => {
+                    setFiles((prev) => ({ ...prev, repairEstimate: null }));
+                    focusField("repairEstimate");
+                  }}
                 >
                   Remove
                 </Button>
@@ -695,7 +722,7 @@ export function ClaimWizard({
       {step === 4 && policy && (
         <Card className="space-y-6">
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
+            <h2 tabIndex={-1} className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
               Review & submit
             </h2>
             <p className="mt-1 text-sm text-slate-600">

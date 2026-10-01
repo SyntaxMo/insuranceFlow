@@ -7,6 +7,7 @@ import {
   hasCurrentCookieNoticeAcknowledgement,
   storeCookieNoticeAcknowledgement,
 } from "@/lib/privacy/cookie-notice";
+import { keyboardTargets } from "@/lib/accessibility/focus";
 
 const COOKIE_NOTICE_EVENT = "insureflow-cookie-notice-change";
 const COOKIE_NOTICE_ANIMATION_MS = 300;
@@ -29,6 +30,7 @@ export function PublicCookieNotice() {
   const [dismissedForPage, setDismissedForPage] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const dismissalTimerRef = useRef<number | null>(null);
+  const noticeRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     return () => {
@@ -42,6 +44,13 @@ export function PublicCookieNotice() {
 
   function dismissNotice() {
     if (isExiting) return;
+
+    const notice = noticeRef.current;
+    if (notice?.contains(document.activeElement)) {
+      const outside = keyboardTargets(document.body).filter((element) => !notice.contains(element));
+      const next = outside.find((element) => Boolean(notice.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING));
+      (next ?? outside.at(-1))?.focus();
+    }
 
     setIsExiting(true);
 
@@ -64,6 +73,8 @@ export function PublicCookieNotice() {
 
   return (
     <aside
+      ref={noticeRef}
+      inert={isExiting ? true : undefined}
       aria-labelledby="cookie-notice-title"
       className={`${isExiting ? "cookie-notice-exit" : "cookie-notice-enter"} fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_55px_-22px_rgba(15,23,42,0.35)] sm:inset-x-auto sm:bottom-5 sm:right-5 sm:p-5`}
     >

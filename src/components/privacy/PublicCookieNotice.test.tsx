@@ -77,6 +77,18 @@ describe("PublicCookieNotice", () => {
     });
   });
 
+  it("hands keyboard focus outside the notice before removing it", async () => {
+    const user = userEvent.setup();
+    render(<><a href="/login">Sign in</a><PublicCookieNotice /><a href="/privacy">Privacy</a></>);
+    await screen.findByRole("button", { name: "Got it" });
+    await user.tab();
+    await user.tab();
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: "Privacy" }));
+    await waitFor(() => expect(screen.queryByText("Cookies on InsureFlow")).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: "Privacy" }));
+  });
+
   it("removes the notice without an animation delay when reduced motion is requested", async () => {
     vi.stubGlobal(
       "matchMedia",
