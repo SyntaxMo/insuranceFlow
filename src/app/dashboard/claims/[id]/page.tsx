@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Alert, Card } from "@/components/ui/Forms";
 import { CustomerClaimResponse } from "@/components/dashboard/CustomerClaimResponse";
@@ -10,6 +11,8 @@ import { requireCustomer } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = { title: "Claim details | InsureFlow" };
+
 export default async function CustomerClaimPage({
   params,
   searchParams,
@@ -20,11 +23,11 @@ export default async function CustomerClaimPage({
   const [{ id }, query, profile] = await Promise.all([params, searchParams, requireCustomer()]);
   const { claim, error } = await getCustomerClaimDetails(profile.id, id);
   if (!claim && !error) notFound();
-  if (!claim) return <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6"><BackToDashboardLink /><div className="mt-5"><Alert tone="error">{error || "Unable to load this claim."}</Alert></div></main>;
+  if (!claim) return <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6"><BackToDashboardLink /><div className="mt-5"><Alert tone="error">{error || "Unable to load this claim."}</Alert></div></div>;
 
   const normalizedStatus = claim.status.toUpperCase();
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-12">
       <BackToDashboardLink />
       {query.submitted === "1" ? <CustomerClaimSubmissionSuccess /> : null}
       <Card className="mt-5">
@@ -48,7 +51,7 @@ export default async function CustomerClaimPage({
       </Card>
 
       <Card className="mt-6 space-y-4"><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Claim history</h2><ClaimHistory history={claim.history} /></Card>
-    </main>
+    </div>
   );
 }
 

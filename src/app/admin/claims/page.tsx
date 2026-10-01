@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { listClaims } from "@/lib/claims/admin";
 import { Alert } from "@/components/ui/Forms";
 import { ClaimsQueue } from "@/components/admin/ClaimsQueue";
@@ -11,6 +12,8 @@ const METRICS = [
   ["APPROVED", "Approved"],
   ["REJECTED", "Rejected"],
 ] as const;
+
+export const metadata: Metadata = { title: "Claims workspace | InsureFlow" };
 
 export default async function AdminClaimsPage() {
   const { claims, error } = await listClaims();

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { ResetPasswordForm } from "@/components/auth/RecoveryForms";
 import { Card } from "@/components/ui/Forms";
 import { getRecoveryClient } from "@/lib/auth/recovery";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "Reset password | InsureFlow" };
 
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const params = await searchParams;

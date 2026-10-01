@@ -47,7 +47,7 @@ function StepIndicator({ current }: { current: number }) {
 
 function PaymentButton() {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? "Issuing policy..." : "Complete simulated payment"}</Button>;
+  return <><p className="sr-only" role="status" aria-live="polite">{pending ? "Issuing policy…" : ""}</p><Button type="submit" disabled={pending} aria-busy={pending} className="w-full sm:w-auto">{pending ? "Issuing policy..." : "Complete simulated payment"}</Button></>;
 }
 
 function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -157,6 +157,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
 
   return (
     <Card className="mx-auto max-w-4xl overflow-hidden p-0 sm:p-0">
+      <p className="sr-only" role="status" aria-live="polite">{quoting ? "Preparing quote…" : ""}</p>
       <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-5 sm:px-7"><StepIndicator current={step} /></div>
       <div className="px-5 py-6 sm:px-7 sm:py-8">
       {(message || issueState.message) ? <div className="mb-5"><Alert tone="error">{message || issueState.message}</Alert></div> : null}
@@ -166,12 +167,12 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
           <h2 ref={stepHeadingRef} tabIndex={-1} id="vehicle-step-heading" className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">Tell us about your vehicle</h2>
           <p className="mt-2 text-sm text-slate-600">Enter the vehicle details used for this demonstration quote. Nothing is saved yet.</p>
           <div className="mt-6 grid gap-x-5 gap-y-6 sm:grid-cols-2">
-            <Field label="Make" htmlFor="make" error={fieldErrors.make}><VehicleMakeAutocomplete value={values.make} onChange={(value) => update("make", value)} /></Field>
-            <Field label="Model" htmlFor="model" error={fieldErrors.model}><VehicleModelAutocomplete make={values.make} value={values.model} onChange={(value) => update("model", value)} /></Field>
-            <Field label="Year" htmlFor="year" error={fieldErrors.year}><TextInput id="year" inputMode="numeric" value={values.year} onChange={(e) => update("year", e.target.value)} /></Field>
-            <Field label="Plate number" htmlFor="plate" error={fieldErrors.plateNumber} hint="Enter the 5 or 6 digit Bahrain plate number."><TextInput id="plate" value={values.plateNumber} onChange={(e) => update("plateNumber", e.target.value)} placeholder="123456" inputMode="numeric" pattern="[0-9]{5,6}" maxLength={6} autoComplete="off" /></Field>
+            <Field required label="Make" htmlFor="make" error={fieldErrors.make}><VehicleMakeAutocomplete id="make" value={values.make} onChange={(value) => update("make", value)} /></Field>
+            <Field required label="Model" htmlFor="model" error={fieldErrors.model}><VehicleModelAutocomplete id="model" make={values.make} value={values.model} onChange={(value) => update("model", value)} /></Field>
+            <Field required label="Year" htmlFor="year" error={fieldErrors.year}><TextInput id="year" inputMode="numeric" value={values.year} onChange={(e) => update("year", e.target.value)} /></Field>
+            <Field required label="Plate number" htmlFor="plate" error={fieldErrors.plateNumber} hint="Enter the 5 or 6 digit Bahrain plate number."><TextInput id="plate" value={values.plateNumber} onChange={(e) => update("plateNumber", e.target.value)} placeholder="123456" inputMode="numeric" pattern="[0-9]{5,6}" maxLength={6} autoComplete="off" /></Field>
             <Field label="VIN (optional)" htmlFor="vin" error={fieldErrors.vin} hint="If entered, use the 17-character vehicle identification number."><TextInput id="vin" value={values.vin} onChange={(e) => update("vin", e.target.value)} placeholder="Optional" maxLength={20} /></Field>
-            <Field label="Estimated vehicle value" htmlFor="vehicle-value" error={fieldErrors.estimatedVehicleValue} hint="BHD 1,000–250,000 for this demonstration."><div className="relative"><span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm font-medium text-slate-500">BHD</span><TextInput id="vehicle-value" className="pl-14" type="number" min="1000" max="250000" step="0.001" value={values.estimatedVehicleValue} onChange={(e) => update("estimatedVehicleValue", e.target.value)} /></div></Field>
+            <Field required label="Estimated vehicle value" htmlFor="vehicle-value" error={fieldErrors.estimatedVehicleValue} hint="BHD 1,000–250,000 for this demonstration."><div className="relative"><span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm font-medium text-slate-500">BHD</span><TextInput id="vehicle-value" className="pl-14" type="number" min="1000" max="250000" step="0.001" value={values.estimatedVehicleValue} onChange={(e) => update("estimatedVehicleValue", e.target.value)} /></div></Field>
           </div>
           <div className="mt-8 flex justify-end"><Button type="button" className="w-full sm:w-auto" onClick={continueVehicle}>Continue to coverage</Button></div>
         </section>
@@ -247,7 +248,7 @@ export function PolicyPurchaseWizard({ customer, requestId }: { customer: { full
           <div data-slot="policy-consent" className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <span className="relative mt-0.5 block size-5 shrink-0">
-                <input id="purchase-consent" type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="peer absolute inset-0 z-10 size-5 cursor-pointer opacity-0" />
+                <input id="purchase-consent" type="checkbox" aria-required="true" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="peer absolute inset-0 z-10 size-5 cursor-pointer opacity-0" />
                 <span data-testid="purchase-consent-control" aria-hidden="true" className={`pointer-events-none flex size-5 items-center justify-center rounded-md border transition peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--brand-teal)] peer-focus-visible:ring-offset-2 ${consentAccepted ? "border-[var(--brand-teal)] bg-[var(--brand-teal)] text-white" : "border-slate-400 bg-white text-transparent"}`}>
                   <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>
                 </span>

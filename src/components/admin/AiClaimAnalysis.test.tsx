@@ -48,7 +48,11 @@ describe("AiClaimAnalysis", () => {
     render(<AiClaimAnalysis claimId="claim-1" />);
     fireEvent.click(screen.getByRole("button", { name: "Analyze with AI" }));
     expect(screen.getByRole("status")).toBeTruthy();
+    for (const indicator of document.querySelectorAll('[class*="animate-"]')) {
+      expect(indicator.className).toContain("motion-reduce:animate-none");
+    }
     expect(await screen.findByText(analysis.summary, {}, { timeout: 2_000 })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Claim analysis is ready.");
     expect(screen.queryByText("Analyzing claim documents")).toBeNull();
   });
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/AuthForms";
 import { Card } from "@/components/ui/Forms";
@@ -16,6 +17,8 @@ const confirmationErrors: Record<string, string> = {
     "We could not start your session from that confirmation link. Please try the link again or sign in.",
   confirmation: "That confirmation link is invalid or has expired.",
 };
+
+export const metadata: Metadata = { title: "Sign in | InsureFlow" };
 
 export default async function LoginPage({
   searchParams,

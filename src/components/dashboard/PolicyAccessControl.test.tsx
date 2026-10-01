@@ -29,6 +29,8 @@ describe("PolicyAccessControl", () => {
       screen.getByRole("dialog", { name: "Remove policy from your account?" }),
     ).toBeTruthy();
     expect(screen.getByText(/It will not cancel the insurance policy/)).toBeTruthy();
+    const dialog = screen.getByRole("dialog");
+    expect(document.getElementById(dialog.getAttribute("aria-describedby")!)?.textContent).toContain("It will not cancel");
     expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remove from account" })).toBeTruthy();
   });

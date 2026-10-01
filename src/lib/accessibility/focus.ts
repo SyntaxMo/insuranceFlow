@@ -1,3 +1,23 @@
+/** Isolate only siblings outside the dialog's ancestor path, never the dialog itself. */
+export function isolateDialogBackground(dialog: HTMLElement | null) {
+  if (!dialog) return () => {};
+  const previous: Array<{ element: HTMLElement; inert: string | null }> = [];
+  for (let node: HTMLElement | null = dialog; node?.parentElement; node = node.parentElement) {
+    for (const sibling of Array.from(node.parentElement.children)) {
+      if (sibling === node || !(sibling instanceof HTMLElement) || sibling.matches("script, style, link")) continue;
+      previous.push({ element: sibling, inert: sibling.getAttribute("inert") });
+      sibling.setAttribute("inert", "");
+    }
+    if (node.parentElement === document.body) break;
+  }
+  return () => {
+    for (const { element, inert } of previous) {
+      if (inert === null) element.removeAttribute("inert");
+      else element.setAttribute("inert", inert);
+    }
+  };
+}
+
 /** Enabled keyboard targets, excluding hidden, inert, and disabled controls. */
 export function keyboardTargets(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(

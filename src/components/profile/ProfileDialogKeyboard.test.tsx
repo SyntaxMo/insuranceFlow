@@ -32,6 +32,7 @@ describe("profile dialog keyboard boundaries", () => {
     expect(document.activeElement).toBe(trigger);
     await user.keyboard(" ");
     const dialog = screen.getByRole("dialog");
+    expect(screen.getByRole("link", { name: "Dashboard", hidden: true }).closest("[inert]")).not.toBeNull();
     const field = kind === "name" ? screen.getByLabelText("Full name")
       : kind === "email" ? screen.getByLabelText("New email address") : null;
     if (field) {
@@ -56,5 +57,6 @@ describe("profile dialog keyboard boundaries", () => {
     if (field) expect(document.activeElement).toBe(field);
     await user.keyboard("{Escape}");
     await waitFor(() => expect(document.activeElement).toBe(trigger));
+    expect(screen.getByRole("link", { name: "Dashboard" }).closest("[inert]")).toBeNull();
   });
 });

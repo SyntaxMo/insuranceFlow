@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { ForgotPasswordForm } from "@/components/auth/RecoveryForms";
 import { Card } from "@/components/ui/Forms";
+
+export const metadata: Metadata = { title: "Reset password | InsureFlow" };
 
 export default function ForgotPasswordPage() {
   return <div className="mx-auto flex w-full max-w-md flex-col px-4 py-12 sm:px-6 sm:py-16">

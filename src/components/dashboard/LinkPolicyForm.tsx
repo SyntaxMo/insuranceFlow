@@ -151,7 +151,8 @@ export function LinkPolicyForm() {
   );
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{pending ? "Checking policy…" : state.match ? (state.match.isExpired ? "Policy found — coverage expired." : "Policy found.") : ""}</p>
       <Card>
         <form action={action} className="space-y-5" noValidate>
           <Field

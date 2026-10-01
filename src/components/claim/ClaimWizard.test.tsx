@@ -83,6 +83,7 @@ describe("ClaimWizard saved policy selection", () => {
     const direct = screen.getByRole("radio", { name: /MOT-2026-DIRECT/ });
     const linked = screen.getByRole("radio", { name: /MOT-2026-LINKED/ });
     expect((direct as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByRole("radiogroup", { name: "Eligible motor policies" }).getAttribute("aria-required")).toBe("true");
     expect((linked as HTMLInputElement).checked).toBe(false);
 
     await user.click(screen.getByRole("button", { name: "Continue" }));
@@ -123,6 +124,11 @@ describe("ClaimWizard saved policy selection", () => {
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Accident details" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(document.activeElement).toBe(screen.getByLabelText("Accident date"));
+    for (const label of ["Accident date", "Accident location", "Accident description", "Email", "Phone number"]) {
+      expect(screen.getByLabelText(label).getAttribute("aria-required")).toBe("true");
+    }
+    expect(screen.getByLabelText("Accident date").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Accident date").getAttribute("aria-describedby")).toBe("accidentDate-error");
     fireEvent.change(screen.getByLabelText("Accident date"), { target: { value: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10) } });
     await user.type(screen.getByLabelText("Accident location"), "Manama Highway");
     await user.type(screen.getByLabelText("Accident description"), "The vehicle was struck from behind.");
@@ -130,6 +136,11 @@ describe("ClaimWizard saved policy selection", () => {
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Supporting documents" }));
     await user.click(screen.getByRole("button", { name: "Continue to review" }));
     expect(document.activeElement).toBe(screen.getByLabelText("Repair estimate (required)"));
+    const repair = screen.getByLabelText("Repair estimate (required)");
+    expect(repair.getAttribute("aria-required")).toBe("true");
+    expect(repair.getAttribute("aria-invalid")).toBe("true");
+    expect(repair.getAttribute("aria-describedby")).toBe("claim-upload-help repairEstimate-error");
+    expect(screen.getByLabelText("Police report (optional)").getAttribute("aria-required")).toBeNull();
   });
 
   it("requires an explicit choice even for one policy on generic entry", () => {

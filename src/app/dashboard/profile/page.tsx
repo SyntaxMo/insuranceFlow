@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
@@ -45,6 +46,8 @@ function DetailRow({
   );
 }
 
+export const metadata: Metadata = { title: "Your profile | InsureFlow" };
+
 export default async function CustomerProfilePage({
   searchParams,
 }: {
@@ -57,7 +60,7 @@ export default async function CustomerProfilePage({
   const email = profile.email?.trim() || "Not provided";
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       {parameters?.emailUpdated === "1" ? (
         <ConfirmationToast message="Email updated successfully" marker="emailUpdated" />
       ) : parameters?.emailChangePending === "1" ? (
@@ -146,6 +149,6 @@ export default async function CustomerProfilePage({
           </nav>
         </Card>
       </section>
-    </main>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   type CoverageRecommendation,
 } from "@/lib/coverage-assistant/schema";
 import type { DemoCoverage } from "@/lib/policies/quote";
-import { trapDialogTab } from "@/lib/accessibility/focus";
+import { isolateDialogBackground, trapDialogTab } from "@/lib/accessibility/focus";
 
 const LOADING_MESSAGES = [
   "Reviewing your priorities",
@@ -60,6 +60,7 @@ export function CoverageAssistant({
     window.requestAnimationFrame(() => triggerRef.current?.focus());
   }, []);
 
+  useEffect(() => open ? isolateDialogBackground(dialogRef.current) : undefined, [open]);
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;

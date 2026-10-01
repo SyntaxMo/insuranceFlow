@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -19,6 +20,8 @@ import { Alert, Card, buttonClassName } from "@/components/ui/Forms";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = { title: "Claim review | InsureFlow" };
+
 export default async function AdminClaimDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { claim, error } = await getClaimById(id);
@@ -28,11 +31,11 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
     : { analysis: null, error: null, supabaseSql: undefined };
 
   if (error || !claim) {
-    return <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6"><Link href="/admin/claims" className="text-sm font-semibold text-[var(--brand-teal)]">← Back to claims</Link><div className="mt-6"><Alert tone="error"><p className="font-semibold">Unable to open this claim</p><p className="mt-1">{error || "Claim not found."}</p></Alert></div></main>;
+    return <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6"><Link href="/admin/claims" className="text-sm font-semibold text-[var(--brand-teal)]">← Back to claims</Link><div className="mt-6"><Alert tone="error"><p className="font-semibold">Unable to open this claim</p><p className="mt-1">{error || "Claim not found."}</p></Alert></div></div>;
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
       <Link href="/admin/claims" className="text-sm font-semibold text-[var(--brand-teal)] hover:underline">← Back to claims</Link>
       <header className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="text-sm font-medium text-slate-500">Motor claim</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--brand-navy)] sm:text-4xl">{claim.claimNumber}</h1><p className="mt-2 text-sm text-slate-600">Submitted {formatDateTime(claim.createdAt)}</p></div>
@@ -87,7 +90,7 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
           <Card className="space-y-4"><h2 className="text-lg font-semibold text-[var(--brand-navy)]">Claim history</h2><ClaimHistory history={claim.history} showActor /></Card>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }
 

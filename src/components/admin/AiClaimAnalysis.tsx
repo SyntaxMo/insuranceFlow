@@ -20,16 +20,14 @@ function AnalysisProgress({ activeStage }: { activeStage: number }) {
   return (
     <div
       className="overflow-hidden rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/80 to-white"
-      role="status"
-      aria-live="polite"
     >
       <div className="h-1 overflow-hidden bg-teal-100">
-        <div className="h-full w-1/3 animate-pulse rounded-full bg-[var(--brand-teal)]" />
+        <div className="h-full w-1/3 animate-pulse motion-reduce:animate-none rounded-full bg-[var(--brand-teal)]" />
       </div>
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-3">
           <span className="relative flex h-3 w-3" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-40" />
+            <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:animate-none rounded-full bg-teal-400 opacity-40" />
             <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--brand-teal)]" />
           </span>
           <p className="text-sm font-semibold text-[var(--brand-navy)]">
@@ -48,7 +46,7 @@ function AnalysisProgress({ activeStage }: { activeStage: number }) {
                     ? "bg-white font-medium text-[var(--brand-navy)] shadow-sm ring-1 ring-teal-100"
                     : complete
                       ? "text-teal-700"
-                      : "text-slate-400"
+                      : "text-slate-500"
                 }`}
               >
                 <span
@@ -56,7 +54,7 @@ function AnalysisProgress({ activeStage }: { activeStage: number }) {
                     complete
                       ? "bg-teal-100 text-teal-700"
                       : active
-                        ? "border-2 border-teal-200 border-t-[var(--brand-teal)] animate-spin"
+                        ? "border-2 border-teal-200 border-t-[var(--brand-teal)] animate-spin motion-reduce:animate-none"
                         : "border border-slate-200 bg-white"
                   }`}
                   aria-hidden="true"
@@ -323,6 +321,7 @@ export function AiClaimAnalysis({
 
   return (
     <Card className="space-y-5 border-teal-100 bg-gradient-to-br from-teal-50/45 to-white">
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{loading ? "Analyzing claim documents." : analysis ? "Claim analysis is ready." : ""}</p>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -354,7 +353,7 @@ export function AiClaimAnalysis({
 
       {analysis ? <AnalysisBody analysis={analysis} /> : null}
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         AI-assisted analysis. Final review must be completed by a claims officer.
       </p>
     </Card>

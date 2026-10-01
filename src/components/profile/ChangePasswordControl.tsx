@@ -9,7 +9,7 @@ import {
 } from "@/app/dashboard/profile/actions";
 import { Button, TextInput } from "@/components/ui/Forms";
 import { PencilIcon } from "@/components/ui/PencilIcon";
-import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
+import { isolateDialogBackground, preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 const initialRequestState: PasswordCodeRequestState = {};
 const initialPasswordState: PasswordChangeState = {};
@@ -69,6 +69,7 @@ function ChangePasswordDialog({
   const [clientConfirmationError, setClientConfirmationError] = useState<string>();
   const pending = requestPending || passwordPending;
 
+  useEffect(() => isolateDialogBackground(dialogRef.current), []);
   useEffect(() => {
     const target = passwordState.success
       ? successCloseRef.current

@@ -1,9 +1,22 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { keyboardTargets, preserveDialogFocus, trapDialogTab } from "./focus";
+import { isolateDialogBackground, keyboardTargets, preserveDialogFocus, trapDialogTab } from "./focus";
 afterEach(() => { document.body.replaceChildren(); });
 
 describe("existing dialog focus helpers", () => {
+  it("isolates only the background and restores pre-existing inert states", () => {
+    document.body.innerHTML = '<header><a href="/">Home</a></header><main><section inert="">Already isolated</section><p>Page content</p><div><div role="dialog"><button>Cancel</button></div></div></main>';
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    const restore = isolateDialogBackground(dialog);
+    expect(document.querySelector("header")?.hasAttribute("inert")).toBe(true);
+    expect(document.querySelector("p")?.hasAttribute("inert")).toBe(true);
+    expect(dialog.closest("[inert]")).toBeNull();
+    expect(keyboardTargets(document.body).map((item) => item.textContent)).toEqual(["Cancel"]);
+    restore();
+    expect(document.querySelector("header")?.hasAttribute("inert")).toBe(false);
+    expect(document.querySelector("p")?.hasAttribute("inert")).toBe(false);
+    expect(document.querySelector("section")?.hasAttribute("inert")).toBe(true);
+  });
   it("excludes hidden fields, disabled fieldsets, inert regions and visually hidden ancestors", () => {
     const root = document.createElement("div");
     root.innerHTML = '<input type="hidden"><fieldset disabled><button>Disabled</button></fieldset><div inert><button>Inert</button></div><div style="display:none"><a href="/">Hidden</a></div><button>Enabled</button>';

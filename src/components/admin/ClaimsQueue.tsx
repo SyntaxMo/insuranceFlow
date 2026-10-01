@@ -58,6 +58,7 @@ export function ClaimsQueue({ claims }: { claims: ClaimListItem[] }) {
 
   return (
     <section aria-labelledby="claim-queue-heading" className="space-y-5">
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{visible.length} {visible.length === 1 ? "claim" : "claims"} shown.</p>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 id="claim-queue-heading" className="text-xl font-semibold text-[var(--brand-navy)]">Claim queue</h2>

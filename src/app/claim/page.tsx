@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { ClaimWizard } from "@/components/claim/ClaimWizard";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 import { requireCustomer } from "@/lib/auth/session";
 import { getEligibleCustomerClaimPolicies } from "@/lib/claims/customer";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "Start a motor claim | InsureFlow" };
 
 export default async function ClaimPage({
   searchParams,

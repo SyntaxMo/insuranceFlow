@@ -1,4 +1,23 @@
-import { forwardRef, type ComponentPropsWithRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { Children, cloneElement, isValidElement, forwardRef, type ComponentPropsWithRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+
+export type FieldControlProps = Pick<InputHTMLAttributes<HTMLInputElement>, "id" | "aria-describedby" | "aria-invalid" | "aria-required">;
+
+function associateField(children: ReactNode, id: string, semantics: FieldControlProps): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement<FieldControlProps & { children?: ReactNode }>(child)) return child;
+    if (child.props.id === id) {
+      const descriptions = [...new Set(`${child.props["aria-describedby"] ?? ""} ${semantics["aria-describedby"] ?? ""}`.split(/\s+/).filter(Boolean))].join(" ");
+      return cloneElement(child, {
+        "aria-describedby": descriptions || undefined,
+        "aria-invalid": semantics["aria-invalid"] ?? child.props["aria-invalid"],
+        "aria-required": semantics["aria-required"] ?? child.props["aria-required"],
+      });
+    }
+    return child.props.children === undefined ? child : cloneElement(child, {
+      children: associateField(child.props.children, id, semantics),
+    });
+  });
+}
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -41,12 +60,14 @@ export function Field({
   htmlFor,
   error,
   hint,
+  required,
   children,
 }: {
   label: string;
   htmlFor: string;
   error?: string;
   hint?: string;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -57,12 +78,16 @@ export function Field({
       >
         {label}
       </label>
-      {children}
+      {associateField(children, htmlFor, {
+        "aria-describedby": error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined,
+        "aria-invalid": error ? true : undefined,
+        "aria-required": required ? true : undefined,
+      })}
       {hint && !error ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p id={`${htmlFor}-hint`} className="text-xs text-slate-500">{hint}</p>
       ) : null}
       {error ? (
-        <p className="text-sm text-rose-600" role="alert">
+        <p id={`${htmlFor}-error`} className="text-sm text-rose-600" role="alert">
           {error}
         </p>
       ) : null}

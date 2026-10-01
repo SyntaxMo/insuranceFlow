@@ -22,6 +22,7 @@ export function ForgotPasswordForm() {
     }
   }
   return <div className="space-y-5">
+    <p className="sr-only" role="status" aria-live="polite">{pending ? "Sending reset link…" : ""}</p>
     {state.success ? <Alert tone="success">{state.message}</Alert> : <form action={action} onSubmit={submit} noValidate className="space-y-5">
       <Field label="Email" htmlFor="recovery-email" error={error ?? state.fields?.email?.[0]}>
         <TextInput ref={input} id="recovery-email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => { setEmail(event.target.value); setError(undefined); }} />
@@ -69,6 +70,7 @@ export function ResetPasswordForm({ recoveryValid = true }: { recoveryValid?: bo
   </div>;
   return <div className="space-y-5">
     <form ref={form} action={action} onSubmit={submit} noValidate className="space-y-5">
+      <p className="sr-only" role="status" aria-live="polite">{pending ? "Updating password…" : ""}</p>
       {(["password", "confirmPassword"] as const).map((name) => <Field key={name} label={name === "password" ? "New password" : "Confirm new password"} htmlFor={`reset-${name}`} error={error(name)} hint={name === "password" ? "Use at least 8 characters." : undefined}>
         <TextInput id={`reset-${name}`} name={name} type="password" autoComplete="new-password" required aria-invalid={Boolean(error(name))} value={values[name]} onChange={(event) => { setValues((current) => ({ ...current, [name]: event.target.value })); setLocalFields({}); setShowServer(false); }} />
       </Field>)}

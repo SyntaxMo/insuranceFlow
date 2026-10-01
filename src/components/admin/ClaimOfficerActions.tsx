@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, TextArea } from "@/components/ui/Forms";
 import type { OfficerClaimAction } from "@/lib/claims/workflow";
-import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
+import { isolateDialogBackground, preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 type DialogConfig = {
   action: OfficerClaimAction;
@@ -77,6 +77,7 @@ function ActionDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => isolateDialogBackground(dialogRef.current), []);
   useEffect(() => {
     (config.noteLabel ? inputRef.current : closeRef.current)?.focus();
   }, [config.noteLabel]);
@@ -97,12 +98,13 @@ function ActionDialog({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !pending) onClose(); }}>
       <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+        <p className="sr-only" role="status" aria-live="polite">{pending ? config.pendingLabel || "Updating claim…" : ""}</p>
         <div className="flex items-start justify-between gap-4">
           <div><h2 id={titleId} className="text-xl font-semibold text-[var(--brand-navy)]">{config.title}</h2><p id={descriptionId} className="mt-2 text-sm leading-6 text-slate-600">{config.description}</p></div>
           <button ref={closeRef} type="button" onClick={onClose} disabled={pending} aria-label="Close dialog" className="rounded-lg px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-teal)]">×</button>
         </div>
         {config.noteLabel ? (
-          <div className="mt-5"><label htmlFor="claim-action-note" className="mb-1.5 block text-sm font-medium text-slate-800">{config.noteLabel}</label><TextArea ref={inputRef} id="claim-action-note" rows={5} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} required={config.noteRequired} disabled={pending} /><p className="mt-1 text-right text-xs text-slate-400">{note.length}/1000</p></div>
+          <div className="mt-5"><label htmlFor="claim-action-note" className="mb-1.5 block text-sm font-medium text-slate-800">{config.noteLabel}</label><TextArea ref={inputRef} id="claim-action-note" rows={5} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} required={config.noteRequired} disabled={pending} /><p className="mt-1 text-right text-xs text-slate-500">{note.length}/1000</p></div>
         ) : null}
         {error ? <div className="mt-4"><Alert tone="error">{error}</Alert></div> : null}
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="secondary" onClick={onClose} disabled={pending}>Cancel</Button><Button type="button" variant={config.danger ? "danger" : "primary"} onClick={() => onConfirm(note)} disabled={pending || Boolean(config.noteRequired && !note.trim())} aria-busy={pending}>{pending ? config.pendingLabel || "Updating…" : config.confirmLabel}</Button></div>
@@ -177,7 +179,8 @@ export function ClaimOfficerActions({ claimId, status }: { claimId: string; stat
       : [];
 
   return (
-    <Card className="space-y-4">
+      <Card className="space-y-4">
+      <p className="sr-only" role="status" aria-live="polite">{pending && !dialog ? "Updating claim…" : ""}</p>
       <div><h2 ref={actionsHeadingRef} tabIndex={-1} className="text-lg font-semibold text-[var(--brand-navy)]">Officer actions</h2><p className="mt-1 text-sm text-slate-600">Human decisions are recorded with the authenticated officer and timestamp.</p></div>
       {notice ? <Alert tone="info">{notice}</Alert> : null}
       {!dialog && error ? <Alert tone="error">{error}</Alert> : null}

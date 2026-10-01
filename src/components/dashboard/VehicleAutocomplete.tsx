@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { TextInput } from "@/components/ui/Forms";
+import { TextInput, type FieldControlProps } from "@/components/ui/Forms";
 import {
   filterVehicleMakes,
   filterVehicleModels,
@@ -34,6 +34,7 @@ function VehicleCombobox({
   suggestions,
   noSuggestionsText,
   showLeadingIcon = false,
+  ...semantics
 }: {
   id: string;
   value: string;
@@ -42,7 +43,7 @@ function VehicleCombobox({
   suggestions: readonly Suggestion[];
   noSuggestionsText?: string;
   showLeadingIcon?: boolean;
-}) {
+} & FieldControlProps) {
   const generatedId = useId();
   const listboxId = `${id}-${generatedId.replaceAll(":", "")}-listbox`;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -67,6 +68,7 @@ function VehicleCombobox({
   return (
     <div ref={rootRef} className="relative">
       <TextInput
+        {...semantics}
         id={id}
         value={value}
         placeholder={placeholder}
@@ -134,15 +136,15 @@ function VehicleCombobox({
   );
 }
 
-export function VehicleMakeAutocomplete({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function VehicleMakeAutocomplete({ value, onChange, ...semantics }: { value: string; onChange: (value: string) => void } & FieldControlProps) {
   const suggestions = useMemo(
     () => filterVehicleMakes(value).map((make: VehicleMake) => ({ value: make.name, logo: make.logo })),
     [value],
   );
-  return <VehicleCombobox id="make" value={value} onChange={onChange} placeholder="Toyota" suggestions={suggestions} showLeadingIcon />;
+  return <VehicleCombobox {...semantics} id={semantics.id ?? "make"} value={value} onChange={onChange} placeholder="Toyota" suggestions={suggestions} showLeadingIcon />;
 }
 
-export function VehicleModelAutocomplete({ make, value, onChange }: { make: string; value: string; onChange: (value: string) => void }) {
+export function VehicleModelAutocomplete({ make, value, onChange, ...semantics }: { make: string; value: string; onChange: (value: string) => void } & FieldControlProps) {
   const suggestions = useMemo(
     () => filterVehicleModels(make, value).map((model) => ({ value: model })),
     [make, value],
@@ -150,7 +152,8 @@ export function VehicleModelAutocomplete({ make, value, onChange }: { make: stri
   const knownMake = suggestions.length > 0 || filterVehicleModels(make, "").length > 0;
   return (
     <VehicleCombobox
-      id="model"
+      {...semantics}
+      id={semantics.id ?? "model"}
       value={value}
       onChange={onChange}
       placeholder="Corolla"

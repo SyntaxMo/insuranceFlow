@@ -19,6 +19,9 @@ it("preserves both values and focuses confirmation on mismatch, then permits cor
   fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "different123" } });
   fireEvent.click(screen.getByRole("button", { name: "Update password" }));
   expect(screen.getByText("Passwords do not match.")).toBeTruthy();
+  expect(screen.getByLabelText("Confirm new password").getAttribute("aria-invalid")).toBe("true");
+  expect(screen.getByLabelText("Confirm new password").getAttribute("aria-describedby")).toBe("reset-confirmPassword-error");
+  expect(screen.getByLabelText("New password").getAttribute("aria-describedby")).toBe("reset-password-hint");
   expect((screen.getByLabelText("New password") as HTMLInputElement).value).toBe("password123");
   expect((screen.getByLabelText("Confirm new password") as HTMLInputElement).value).toBe("different123");
   expect(document.activeElement).toBe(screen.getByLabelText("Confirm new password"));

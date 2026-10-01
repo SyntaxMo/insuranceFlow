@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ConfirmationToast } from "@/components/auth/ConfirmationToast";
 import { Alert, buttonClassName, Card } from "@/components/ui/Forms";
@@ -37,6 +38,8 @@ function EmptyState({ title, description, children }: { title: string; descripti
   );
 }
 
+export const metadata: Metadata = { title: "Dashboard | InsureFlow" };
+
 export default async function CustomerDashboardPage({ searchParams }: { searchParams: Promise<{ confirmed?: string; policyLinked?: string; policyRemoved?: string }> }) {
   const params = await searchParams;
   const profile = await requireCustomer();
@@ -63,7 +66,7 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
     .slice(0, 5);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       {params.confirmed === "1" ? <ConfirmationToast /> : null}
       {params.policyLinked === "1" ? (
         <ConfirmationToast
@@ -198,6 +201,6 @@ export default async function CustomerDashboardPage({ searchParams }: { searchPa
           )}
         </Card>
       </section>
-    </main>
+    </div>
   );
 }

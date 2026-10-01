@@ -59,10 +59,10 @@ function StepIndicator({ current }: { current: Step }) {
                 ? "border-[var(--brand-teal)] bg-[var(--brand-teal-soft)] text-[var(--brand-navy)]"
                 : complete
                   ? "border-slate-200 bg-slate-50 text-slate-700"
-                  : "border-slate-200 bg-white text-slate-400"
+                  : "border-slate-200 bg-white text-slate-600"
             }`}
           >
-            <span className="block text-xs uppercase tracking-wide opacity-70">
+            <span className="block text-xs uppercase tracking-wide">
               Step {step.id}
             </span>
             <span className="font-semibold">{step.label}</span>
@@ -423,6 +423,7 @@ export function ClaimWizard({
 
   return (
     <div ref={wizardRef}>
+      <p className="sr-only" role="status" aria-live="polite">{submitting ? "Submitting claim…" : ""}</p>
       <StepIndicator current={step} />
 
       {step === 1 && (
@@ -450,7 +451,7 @@ export function ClaimWizard({
           ) : null}
 
           {policies.length > 0 ? (
-            <fieldset>
+            <fieldset role="radiogroup" aria-required="true" aria-invalid={Boolean(policyError)} aria-describedby={policyError ? "claim-policy-error" : undefined}>
               <legend className="sr-only">Eligible motor policies</legend>
               <div className="grid gap-3">
                 {policies.map((item) => (
@@ -468,7 +469,7 @@ export function ClaimWizard({
             </fieldset>
           ) : null}
 
-          {policyError ? <Alert tone="error">{policyError}</Alert> : null}
+          {policyError ? <div id="claim-policy-error"><Alert tone="error">{policyError}</Alert></div> : null}
 
           {policies.length > 0 ? <div className="flex justify-end">
             <Button type="button" onClick={goToAccident}>
@@ -496,6 +497,7 @@ export function ClaimWizard({
             <Field
               label="Accident date"
               htmlFor="accidentDate"
+              required
               error={accidentErrors.accidentDate}
             >
               <TextInput
@@ -513,6 +515,7 @@ export function ClaimWizard({
             <Field
               label="Accident location"
               htmlFor="accidentLocation"
+              required
               error={accidentErrors.accidentLocation}
             >
               <TextInput
@@ -532,6 +535,7 @@ export function ClaimWizard({
           <Field
             label="Accident description"
             htmlFor="description"
+            required
             error={accidentErrors.description}
           >
             <TextArea
@@ -549,7 +553,7 @@ export function ClaimWizard({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" htmlFor="email" hint="From your customer profile." error={accidentErrors.email}>
+            <Field required label="Email" htmlFor="email" hint="From your customer profile." error={accidentErrors.email}>
               <TextInput
                 id="email"
                 type="email"
@@ -561,6 +565,7 @@ export function ClaimWizard({
             <Field
               label="Phone number"
               htmlFor="phone"
+              required
               hint="From your customer profile."
               error={accidentErrors.phone}
             >
@@ -591,7 +596,7 @@ export function ClaimWizard({
             <h2 tabIndex={-1} className="font-[family-name:var(--font-display)] text-2xl text-[var(--brand-navy)]">
               Supporting documents
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <p id="claim-upload-help" className="mt-1 text-sm text-slate-600">
               Upload PDF or image files (JPEG, PNG, WEBP). Max 10 MB each.
             </p>
           </div>
@@ -605,6 +610,7 @@ export function ClaimWizard({
           >
             <TextInput
               id="policeReport"
+              aria-describedby="claim-upload-help"
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => onPoliceReportChange(e.target.files)}
@@ -631,10 +637,12 @@ export function ClaimWizard({
           <Field
             label="Repair estimate (required)"
             htmlFor="repairEstimate"
+            required
             error={fileErrors.repairEstimate}
           >
             <TextInput
               id="repairEstimate"
+              aria-describedby="claim-upload-help"
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => onRepairEstimateChange(e.target.files)}
@@ -661,10 +669,12 @@ export function ClaimWizard({
           <Field
             label="Accident photos (required, multiple allowed)"
             htmlFor="accidentPhotos"
+            required
             error={fileErrors.accidentPhotos}
           >
             <TextInput
               id="accidentPhotos"
+              aria-describedby="claim-upload-help"
               type="file"
               multiple
               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp,.pdf,application/pdf"

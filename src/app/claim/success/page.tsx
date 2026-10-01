@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClassName, Card } from "@/components/ui/Forms";
 import { requireCustomer } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "Claim submitted | InsureFlow" };
 
 export default async function ClaimSuccessPage({
   searchParams,

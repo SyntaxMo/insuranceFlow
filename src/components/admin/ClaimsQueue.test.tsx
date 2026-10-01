@@ -16,6 +16,7 @@ describe("ClaimsQueue", () => {
     render(<ClaimsQueue claims={claims} />);
     expect(screen.getAllByText("New").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Waiting on Customer" }));
+    expect(screen.getByRole("status").textContent).toContain("1 claim shown");
     expect(screen.queryByText("CLM-NEW")).toBeNull();
     expect(screen.getAllByText("CLM-WAIT").length).toBeGreaterThan(0);
   });

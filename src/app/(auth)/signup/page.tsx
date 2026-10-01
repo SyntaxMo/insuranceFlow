@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SignupForm } from "@/components/auth/AuthForms";
 import { Card } from "@/components/ui/Forms";
 import { getAuthenticatedProfile, routeForRole } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "Create account | InsureFlow" };
 
 export default async function SignupPage() {
   const profile = await getAuthenticatedProfile();

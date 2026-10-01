@@ -4,10 +4,12 @@ import { afterEach, expect, it, vi } from "vitest";
 const { recovery, reset } = vi.hoisted(() => ({ recovery: vi.fn(), reset: vi.fn() }));
 vi.mock("@/lib/auth/recovery", () => ({ getRecoveryClient: recovery }));
 vi.mock("@/app/(auth)/recovery-actions", () => ({ requestPasswordReset: vi.fn(), resetPassword: reset }));
-import ForgotPasswordPage from "./forgot-password/page";
-import ResetPasswordPage from "./reset-password/page";
+import ForgotPasswordPage, { metadata as forgotMetadata } from "./forgot-password/page";
+import ResetPasswordPage, { metadata as resetMetadata } from "./reset-password/page";
 afterEach(cleanup);
 it("renders public recovery request without requiring a session", () => {
+  expect(forgotMetadata.title).toBe("Reset password | InsureFlow");
+  expect(resetMetadata.title).toBe("Reset password | InsureFlow");
   render(<ForgotPasswordPage />);
   expect(screen.getByRole("heading", { name: "Reset your password" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Send reset link" })).toBeTruthy();

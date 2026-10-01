@@ -7,7 +7,7 @@ import {
 } from "@/app/dashboard/profile/actions";
 import { Button, TextInput } from "@/components/ui/Forms";
 import { PencilIcon } from "@/components/ui/PencilIcon";
-import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
+import { isolateDialogBackground, preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 const initialState: FullNameChangeState = {};
 
@@ -53,6 +53,7 @@ function ChangeFullNameDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const successCloseRef = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => isolateDialogBackground(dialogRef.current), []);
   useEffect(() => {
     const target = state.success
       ? successCloseRef.current

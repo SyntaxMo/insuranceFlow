@@ -14,7 +14,7 @@ vi.mock("@/lib/claims/customer", () => ({
   getCustomerAccountSummary: mocks.getCustomerAccountSummary,
 }));
 
-import CustomerProfilePage from "@/app/dashboard/profile/page";
+import CustomerProfilePage, { metadata } from "@/app/dashboard/profile/page";
 
 const customer = {
   id: "current-customer-id",
@@ -40,7 +40,9 @@ describe("CustomerProfilePage", () => {
   });
 
   it("renders the authenticated customer's persisted profile and account summary", async () => {
-    render(await CustomerProfilePage());
+    render(<main>{await CustomerProfilePage()}</main>);
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(metadata.title).toBe("Your profile | InsureFlow");
 
     expect(screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href")).toBe("/dashboard");
     expect(screen.getByRole("heading", { name: "Your profile" })).toBeTruthy();

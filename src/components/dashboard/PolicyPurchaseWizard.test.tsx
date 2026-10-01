@@ -78,6 +78,12 @@ describe("PolicyPurchaseWizard presentation", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Make"));
     await user.click(screen.getByRole("button", { name: "Continue to coverage" }));
     expect(document.activeElement).toBe(screen.getByLabelText("Make"));
+    for (const label of ["Make", "Model", "Year", "Plate number", "Estimated vehicle value"]) {
+      expect(screen.getByLabelText(label).getAttribute("aria-required")).toBe("true");
+    }
+    expect(screen.getByLabelText("Make").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Make").getAttribute("aria-describedby")).toBe("make-error");
+    expect(screen.getByLabelText("VIN (optional)").getAttribute("aria-required")).toBeNull();
     await user.type(screen.getByLabelText("Make"), "Toyota");
     await user.type(screen.getByLabelText("Model"), "Corolla");
     await user.type(screen.getByLabelText("Plate number"), "927410");

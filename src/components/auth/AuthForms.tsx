@@ -28,9 +28,12 @@ function SubmitButton({
   pendingLabel?: string;
 }) {
   return (
-    <Button className="w-full" type="submit" disabled={pending}>
+    <>
+    <p className="sr-only" role="status" aria-live="polite">{pending ? pendingLabel : ""}</p>
+    <Button className="w-full" type="submit" disabled={pending} aria-busy={pending}>
       {pending ? pendingLabel : label}
     </Button>
+    </>
   );
 }
 

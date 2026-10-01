@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PolicyAccessControl } from "@/components/dashboard/PolicyAccessControl";
@@ -17,6 +18,8 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
+export const metadata: Metadata = { title: "Policy details | InsureFlow" };
+
 export default async function CustomerPolicyPage({
   params,
 }: {
@@ -28,10 +31,10 @@ export default async function CustomerPolicyPage({
   if (!policy && !error) notFound();
   if (!policy) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <BackToDashboardLink />
         <div className="mt-5"><Alert tone="error">{error || "Unable to load this policy."}</Alert></div>
-      </main>
+      </div>
     );
   }
 
@@ -41,7 +44,7 @@ export default async function CustomerPolicyPage({
   const policyDocument = await getPolicyDocumentMetadata(policy.id);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <BackToDashboardLink />
 
       <header className="mt-5 rounded-3xl bg-[var(--brand-navy)] px-5 py-7 text-white shadow-[0_24px_60px_-38px_rgba(15,23,42,0.75)] sm:px-8 sm:py-9">
@@ -134,6 +137,6 @@ export default async function CustomerPolicyPage({
       <p className="mt-8 border-t border-slate-200 pt-5 text-sm leading-6 text-slate-500">
         This page provides a summary of your policy information. Coverage is subject to the full policy terms and conditions.
       </p>
-    </main>
+    </div>
   );
 }

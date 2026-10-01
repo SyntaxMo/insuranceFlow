@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { LinkPolicyForm } from "@/components/dashboard/LinkPolicyForm";
 import { BackToDashboardLink } from "@/components/navigation/BackToDashboardLink";
 
+export const metadata: Metadata = { title: "Link a policy | InsureFlow" };
+
 export default function LinkPolicyPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
       <BackToDashboardLink />
       <div className="mb-7 mt-5">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-teal)]">Policies</p>
@@ -13,6 +16,6 @@ export default function LinkPolicyPage() {
         </p>
       </div>
       <LinkPolicyForm />
-    </main>
+    </div>
   );
 }

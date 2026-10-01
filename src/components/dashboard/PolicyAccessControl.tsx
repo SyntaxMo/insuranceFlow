@@ -6,7 +6,7 @@ import {
   type RemovePolicyState,
 } from "@/app/dashboard/policies/actions";
 import { Alert, Button } from "@/components/ui/Forms";
-import { preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
+import { isolateDialogBackground, preserveDialogFocus, trapDialogTab } from "@/lib/accessibility/focus";
 
 const initialState: RemovePolicyState = {};
 
@@ -44,6 +44,7 @@ export function PolicyAccessControl({
     window.requestAnimationFrame(() => triggerRef.current?.focus());
   }
 
+  useEffect(() => modalOpen ? isolateDialogBackground(dialogRef.current) : undefined, [modalOpen]);
   useEffect(() => {
     if (!menuOpen) return;
     function onPointerDown(event: MouseEvent) {
@@ -143,6 +144,7 @@ export function PolicyAccessControl({
             role="dialog"
             aria-modal="true"
             aria-labelledby={`remove-policy-title-${policyId}`}
+              aria-describedby={`remove-policy-description-${policyId}`}
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
           >
             <h2
@@ -151,7 +153,7 @@ export function PolicyAccessControl({
             >
               Remove policy from your account?
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p id={`remove-policy-description-${policyId}`} className="mt-3 text-sm leading-6 text-slate-600">
               This will remove access to this policy from your InsureFlow account. It will not cancel the insurance policy.
             </p>
             {state.message ? (
