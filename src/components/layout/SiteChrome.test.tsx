@@ -61,13 +61,24 @@ describe("shared branded chrome", () => {
     expect(screen.queryByRole("menuitem", { name: "Dashboard" })).toBeNull();
   });
 
-  it("does not show the customer account menu in staff navigation", async () => {
-    getAuthenticatedProfileMock.mockResolvedValue({ role: "CLAIMS_OFFICER" });
+  it.each(["CLAIMS_OFFICER", "ADMIN"])("keeps Claims and exposes the staff profile in the %s account menu", async (role) => {
+    const user = userEvent.setup();
+    getAuthenticatedProfileMock.mockResolvedValue({ role, full_name: "Staff member", email: "staff@example.com" });
     render(await SiteHeader());
-    expect(screen.queryByRole("button", { name: "Account menu" })).toBeNull();
     expect(screen.getByRole("link", { name: "InsureFlow home" }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("link", { name: "Claims" }).getAttribute("href")).toBe("/admin/claims");
-    expect(screen.getByRole("button", { name: "Sign Out" })).toBeTruthy();
+    const trigger = screen.getByRole("button", { name: "Account menu" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    const profile = screen.getByRole("menuitem", { name: "Profile" });
+    expect(profile.getAttribute("href")).toBe("/admin/profile");
+    expect(document.activeElement).toBe(profile);
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Sign out" }));
+    expect(screen.queryByRole("menuitem", { name: "Claims" })).toBeNull();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("keeps the compact legal footer and new brand lockup", () => {

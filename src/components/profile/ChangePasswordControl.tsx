@@ -14,7 +14,16 @@ import { isolateDialogBackground, preserveDialogFocus, trapDialogTab } from "@/l
 const initialRequestState: PasswordCodeRequestState = {};
 const initialPasswordState: PasswordChangeState = {};
 
-export function ChangePasswordControl({ currentEmail }: { currentEmail: string }) {
+type PasswordChangeActions = {
+  requestCodeAction?: typeof requestPasswordChangeCodeAction;
+  changePasswordAction?: typeof updatePasswordAction;
+};
+
+export function ChangePasswordControl({
+  currentEmail,
+  requestCodeAction = requestPasswordChangeCodeAction,
+  changePasswordAction = updatePasswordAction,
+}: { currentEmail: string } & PasswordChangeActions) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -36,7 +45,7 @@ export function ChangePasswordControl({ currentEmail }: { currentEmail: string }
         <PencilIcon />
       </button>
       {open ? (
-        <ChangePasswordDialog currentEmail={currentEmail} onClose={closeDialog} />
+        <ChangePasswordDialog currentEmail={currentEmail} onClose={closeDialog} requestCodeAction={requestCodeAction} changePasswordAction={changePasswordAction} />
       ) : null}
     </>
   );
@@ -45,16 +54,20 @@ export function ChangePasswordControl({ currentEmail }: { currentEmail: string }
 function ChangePasswordDialog({
   currentEmail,
   onClose,
+  requestCodeAction,
+  changePasswordAction,
 }: {
   currentEmail: string;
   onClose: () => void;
+  requestCodeAction: typeof requestPasswordChangeCodeAction;
+  changePasswordAction: typeof updatePasswordAction;
 }) {
   const [requestState, requestAction, requestPending] = useActionState(
-    requestPasswordChangeCodeAction,
+    requestCodeAction,
     initialRequestState,
   );
   const [passwordState, passwordAction, passwordPending] = useActionState(
-    updatePasswordAction,
+    changePasswordAction,
     initialPasswordState,
   );
   const dialogRef = useRef<HTMLDivElement>(null);
